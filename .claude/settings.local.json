@@ -5,7 +5,8 @@
       "Bash(npx husky install)",
       "Bash(npx husky init)",
       "Bash(del:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
