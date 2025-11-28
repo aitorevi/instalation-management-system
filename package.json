@@ -1,0 +1,46 @@
+{
+  "name": "ims",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Installation Management System - PWA with Astro 5 and Supabase",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.config.integration.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:debug": "playwright test --ui",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@astrojs/vercel": "^9.0.2",
+    "@supabase/supabase-js": "^2.86.0",
+    "astro": "^5.16.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
+    "@vitest/ui": "^4.0.14",
+    "astro-eslint-parser": "^1.2.2",
+    "eslint": "^9.39.1",
+    "eslint-plugin-astro": "^1.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.1",
+    "prettier-plugin-astro": "^0.14.1",
+    "vitest": "^4.0.14"
+  },
+  "lint-staged": {
+    "*.{ts,astro}": "eslint --fix",
+    "*.{ts,astro,json,css,md}": "prettier --write --ignore-unknown"
+  }
+}

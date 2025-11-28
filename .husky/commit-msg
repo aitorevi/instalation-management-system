@@ -1,0 +1,15 @@
+# Conventional Commits validation
+commit_msg_file=$1
+commit_msg=$(cat "$commit_msg_file")
+
+# Pattern: type(scope): description
+# Examples: feat: add login, fix(auth): correct token validation
+pattern='^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?: .{1,100}$'
+
+if ! echo "$commit_msg" | grep -qE "$pattern"; then
+  echo "Error: Commit message does not follow Conventional Commits format"
+  echo "Expected format: <type>(<scope>): <description>"
+  echo "Example: feat: add user authentication"
+  echo "Example: fix(api): correct validation logic"
+  exit 1
+fi

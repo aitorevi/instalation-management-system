@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./secrets/**)",
+      "Read(./node_modules/**)",
+      "Read(./dist/**)",
+      "Read(./build/**)",
+      "Read(./.git/**)",
+      "Read(./.next/**)",
+      "Read(./.idea/**)",
+      "Read(./.vscode/**)"
+    ]
+  }
+}
