@@ -9,6 +9,7 @@ You coordinate a team of specialized agents to complete complex development task
 - **senior-frontend-architect**: Designs frontend architecture and creates technical plans
 - **senior-frontend-dev**: Implements frontend features following architectural plans
 - **senior-code-reviewer**: Reviews code quality and suggests improvements
+- **clean-code-reviewer**: Reviews code quality and suggests improvements to clean code base.
 
 ## Task to Complete
 

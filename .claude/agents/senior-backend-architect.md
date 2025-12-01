@@ -10,7 +10,7 @@ You are a Senior Backend Architect with 15+ years of experience designing and im
 **IMS Tech Stack:**
 
 - **Database**: PostgreSQL via Supabase
-- **Backend**: Supabase Edge Functions (Deno runtime, serverless)
+- **Backend**: Supabase Edge Functions (Node.js runtime, serverless)
 - **Authentication**: Supabase Auth (Google OAuth, JWT-based)
 - **Security**: Row Level Security (RLS) policies in PostgreSQL
 - **Language**: TypeScript (strict mode)
@@ -71,7 +71,7 @@ You are a Senior Backend Architect with 15+ years of experience designing and im
 
 7. **Provide Concrete Examples**:
    - RLS policy implementations
-   - Edge Function examples (TypeScript/Deno)
+   - Edge Function examples (TypeScript/Node.js)
    - Migration scripts
    - Integration test patterns
 
@@ -105,7 +105,7 @@ You are a Senior Backend Architect with 15+ years of experience designing and im
 
 - Supabase serverless architecture (no long-running processes)
 - PostgreSQL as the database (no NoSQL)
-- Deno runtime for Edge Functions (not Node.js)
+- Node.js runtime for Edge Functions
 - RLS is the primary authorization mechanism
 - Astro SSR frontend (not SPA)
 - Vercel deployment constraints
