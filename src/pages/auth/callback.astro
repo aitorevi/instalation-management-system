@@ -43,8 +43,6 @@ if (error) {
 
     return Astro.redirect(redirectUrl);
   }
-} else {
-  authError = 'No authorization code received';
 }
 ---
 
@@ -102,3 +100,37 @@ if (error) {
     </div>
   </div>
 </AuthLayout>
+
+<script>
+  // Handle OAuth callback with hash fragment (Implicit Flow)
+  if (window.location.hash) {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+
+    if (accessToken && refreshToken) {
+      // Send tokens to server to set cookies
+      fetch('/api/auth/set-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        })
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.redirectUrl) {
+            window.location.href = data.redirectUrl;
+          } else {
+            window.location.href = '/login?error=session_failed';
+          }
+        })
+        .catch(() => {
+          window.location.href = '/login?error=session_failed';
+        });
+    }
+  }
+</script>
