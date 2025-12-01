@@ -1,0 +1,7 @@
+---
+import { signOut } from '../../lib/auth';
+
+signOut(Astro.cookies);
+
+return Astro.redirect('/login');
+---

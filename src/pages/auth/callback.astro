@@ -1,0 +1,104 @@
+---
+import AuthLayout from '../../layouts/AuthLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+const code = Astro.url.searchParams.get('code');
+const error = Astro.url.searchParams.get('error');
+const errorDescription = Astro.url.searchParams.get('error_description');
+
+let authError: string | null = null;
+let redirectUrl = '/login';
+
+if (error) {
+  authError = errorDescription || error;
+} else if (code) {
+  const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (exchangeError) {
+    authError = exchangeError.message;
+  } else if (data.session) {
+    Astro.cookies.set('sb-access-token', data.session.access_token, {
+      path: '/',
+      httpOnly: true,
+      secure: import.meta.env.PROD,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7
+    });
+
+    Astro.cookies.set('sb-refresh-token', data.session.refresh_token, {
+      path: '/',
+      httpOnly: true,
+      secure: import.meta.env.PROD,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30
+    });
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+
+    redirectUrl = userData?.role === 'admin' ? '/admin' : '/installer';
+
+    return Astro.redirect(redirectUrl);
+  }
+} else {
+  authError = 'No authorization code received';
+}
+---
+
+<AuthLayout title="Procesando...">
+  <div class="w-full max-w-md">
+    <div class="card text-center">
+      {
+        authError ? (
+          <>
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mb-4">
+              <svg
+                class="w-6 h-6 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Error de Autenticación</h2>
+            <p class="text-gray-600 mb-6">{authError}</p>
+            <a href="/login" class="btn-primary">
+              Volver a Intentar
+            </a>
+          </>
+        ) : (
+          <>
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-primary-100 rounded-full mb-4">
+              <svg class="w-6 h-6 text-primary-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            </div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Procesando...</h2>
+            <p class="text-gray-600">Verificando autenticación</p>
+          </>
+        )
+      }
+    </div>
+  </div>
+</AuthLayout>
