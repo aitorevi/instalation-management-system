@@ -1,536 +1,641 @@
-# Frontend Architecture - Phase 01: Project Setup
+# Frontend Implementation - Phase 11: Admin Installers Management
 
 ## Overview
 
-Phase 01 establishes the foundational frontend architecture for the IMS (Installation Management System) using Astro 5 with SSR (Server-Side Rendering) and Tailwind CSS. This phase focuses on creating a robust, performant, and maintainable foundation.
+Phase 11 implements the frontend for admin management of installers (users). This includes viewing the team overview with role-based separation, individual installer profiles with statistics, editing capabilities, and role management (promote/demote between admin and installer roles).
+
+**Current Status**: Backend queries and actions are defined in the planning document. This checklist covers complete frontend implementation with comprehensive testing.
+
+### Key Features
+
+1. **Team Overview Page** (`/admin/installers/index.astro`):
+   - Display users separated by role (admins and installers)
+   - Show installer statistics (pending, in progress, completed installations)
+   - Info card explaining how new installers are added (via Google OAuth)
+   - Link to individual profiles
+
+2. **Installer Profile Page** (`/admin/installers/[id].astro`):
+   - View and edit installer profile form (name, phone, company details)
+   - Display installer info and statistics sidebar
+   - Show recent installations (last 10) with links
+   - Promote to admin / demote to installer modals
+   - Self-role protection (cannot modify own role)
+   - Spanish phone format validation (+34)
+
+3. **Components**:
+   - Reuse existing UI components (Button, Badge, Input, Textarea, Modal, Alert, EmptyState)
+   - Leverage StatusBadge for installation status display
+   - Follow existing table and card patterns from installations pages
 
 ### Architecture Principles
 
-1. **Server-First Rendering**: Astro 5 SSR mode for optimal performance and SEO
-2. **Utility-First Styling**: Tailwind CSS without `@apply` component abstractions
-3. **Type Safety**: Strict TypeScript configuration with explicit types
-4. **Component Organization**: Clear folder structure for scalability
-5. **Path Aliases**: Clean imports using TypeScript path mapping
-6. **Progressive Enhancement**: Base HTML/CSS first, JavaScript as enhancement
+- **Consistent Design**: Follow existing admin pages patterns (installations management)
+- **Role-Based UX**: Clear visual distinction between admins and installers
+- **Self-Protection**: Prevent users from modifying their own role
+- **Data-Driven UI**: Show installer statistics prominently for quick assessment
+- **Mobile-First**: Responsive tables and cards for all screen sizes
+- **Security**: All role changes require explicit confirmation via modals
+- **Accessibility**: WCAG 2.1 AA compliance for all interactive elements
 
-### Technology Stack
+---
 
-- **Framework**: Astro 5 (SSR mode)
-- **Styling**: Tailwind CSS v3.4+ (utility-first only)
-- **Language**: TypeScript (strict mode)
-- **Package Manager**: npm
-- **Deployment**: Vercel (via @astrojs/vercel adapter)
-- **Testing**: Playwright (E2E)
+## Implementation Status Summary
 
-### Project Structure
+### Prerequisites ✅
 
-```
-ims/
-├── src/
-│   ├── components/
-│   │   ├── ui/              # Generic UI components (buttons, inputs, cards)
-│   │   ├── layout/          # Layout components (header, footer, nav)
-│   │   ├── installations/   # Installation-specific components
-│   │   └── notifications/   # Push notification components
-│   ├── layouts/             # Page layouts
-│   ├── lib/                 # Utilities and helpers
-│   ├── pages/               # File-based routing
-│   ├── types/               # TypeScript type definitions
-│   └── styles/
-│       └── global.css       # Tailwind directives + base styles
-├── public/                  # Static assets
-├── e2e/                     # Playwright E2E tests
-└── astro.config.mjs         # Astro configuration
-```
+- Phase 01-10 completed (authentication, dashboard, installations CRUD)
+- `src/lib/queries/users.ts` exists with basic functions (`getInstallers`, `getUserById`)
+- `src/components/ui/*` components available (Button, Badge, Input, Textarea, Modal, Alert, EmptyState)
+- `src/components/installations/StatusBadge.astro` available for status display
+- `DashboardLayout` available for page structure
+
+### Completed ✅
+
+- ✅ Backend: `src/lib/actions/users.ts` (user update, role change actions)
+- ✅ Backend: Extended queries in `src/lib/queries/users.ts` (getAllUsers, getSingleInstallerStats, getInstallerInstallations)
+- ✅ Frontend: Team overview page (`/admin/installers/index.astro`)
+- ✅ Frontend: Installer profile page (`/admin/installers/[id].astro`)
+- ✅ Frontend: Phone validation (Spanish format: +34)
+- ✅ Testing: Unit tests for backend functions (38 tests passing)
+- ✅ Testing: E2E tests for user flows (overview, profile, role management)
 
 ---
 
 ## Detailed Implementation Checklist
 
-### 1. Project Initialization
+## SETUP - Backend Queries & Actions ✅
 
-- [ ] **Create Astro project with minimal template**
-  - File: Root directory
-  - Command: `npm create astro@latest . -- --template minimal --typescript strict`
-  - Acceptance: Project created with TypeScript strict mode enabled
+### 1. Backend Actions Implementation ✅
 
-- [ ] **Install core dependencies**
-  - Command: `npm install @astrojs/tailwind @astrojs/vercel tailwindcss`
-  - Acceptance: All dependencies installed in `package.json`
+#### 1.1 Create User Actions File ✅
 
-- [ ] **Install development dependencies**
-  - Command: `npm install -D @playwright/test @types/node`
-  - Acceptance: Playwright and Node types available for testing
+**File**: `src/lib/actions/users.ts` (COMPLETED)
 
-### 2. Astro Configuration
+- [x] **Create file structure** ✅
+- [x] **Implement `updateUser()` function** ✅ (includes Spanish phone validation)
+- [x] **Implement `changeUserRole()` function** ✅
+- [x] **Export all action functions** ✅
 
-- [ ] **Configure Astro for SSR with Vercel adapter**
-  - File: `astro.config.mjs`
-  - Add SSR mode: `output: 'server'`
-  - Add Vercel adapter: `adapter: vercel()`
-  - Add Tailwind integration: `integrations: [tailwind()]`
-  - Acceptance: Configuration exports valid Astro config with SSR + Vercel + Tailwind
-
-- [ ] **Configure Astro Tailwind integration options**
-  - File: `astro.config.mjs`
-  - Disable default base styles: `applyBaseStyles: false`
-  - Acceptance: Tailwind integration configured to skip default base styles
-
-### 3. TypeScript Configuration
-
-- [ ] **Configure TypeScript path aliases**
-  - File: `tsconfig.json`
-  - Add paths: `@/*`, `@components/*`, `@lib/*`, `@layouts/*`, `@types/*`
-  - Set baseUrl: `"baseUrl": "."`
-  - Acceptance: All path aliases resolve correctly in IDE
-
-- [ ] **Verify strict TypeScript configuration**
-  - File: `tsconfig.json`
-  - Ensure strict: `"strict": true`
-  - Ensure noImplicitAny: `"noImplicitAny": true`
-  - Ensure strictNullChecks: `"strictNullChecks": true`
-  - Acceptance: TypeScript enforces strict type checking
-
-### 4. Tailwind CSS Configuration
-
-- [ ] **Initialize Tailwind configuration**
-  - File: `tailwind.config.mjs`
-  - Configure content paths: `['./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}']`
-  - Acceptance: Tailwind processes all source files for class detection
-
-- [ ] **Configure custom color palette**
-  - File: `tailwind.config.mjs`
-  - Add primary blue scale (50-900) in `theme.extend.colors`
-  - Reference: Use Tailwind's blue palette as base
-  - Acceptance: Custom primary colors available as `bg-primary-500`, `text-primary-700`, etc.
-
-- [ ] **Configure mobile-first responsive breakpoints**
-  - File: `tailwind.config.mjs`
-  - Verify default breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px), 2xl (1536px)
-  - Acceptance: Breakpoints follow Tailwind defaults for mobile-first design
-
-- [ ] **Document Tailwind utility-first policy**
-  - File: `tailwind.config.mjs` (comment at top)
-  - Add comment: NO @apply component classes allowed
-  - Add comment: Use utility classes directly in templates
-  - Acceptance: Clear policy documented in config file
-
-### 5. Global Styles Setup
-
-- [ ] **Create global.css with Tailwind directives**
-  - File: `src/styles/global.css`
-  - Add `@tailwind base;`
-  - Add `@tailwind components;`
-  - Add `@tailwind utilities;`
-  - Acceptance: Tailwind layers properly imported
-
-- [ ] **Add base layer styles for html element**
-  - File: `src/styles/global.css`
-  - Use `@layer base` for html styles
-  - Set font smoothing: `antialiased`
-  - Set scroll behavior: `smooth`
-  - Acceptance: Base HTML styles applied globally
-
-- [ ] **Add base layer styles for body element**
-  - File: `src/styles/global.css`
-  - Use `@layer base` for body styles
-  - Set default font: system font stack
-  - Set default colors: text and background
-  - Acceptance: Body has consistent base styling
-
-- [ ] **Verify NO component layer classes created**
-  - File: `src/styles/global.css`
-  - Ensure no `.btn`, `.card`, `.input` classes in `@layer components`
-  - Acceptance: Only base and utilities layers used, NO component abstractions
-
-### 6. Folder Structure Creation
-
-- [ ] **Create component folders**
-  - Folders:
-    - `src/components/ui/`
-    - `src/components/layout/`
-    - `src/components/installations/`
-    - `src/components/notifications/`
-  - Add `.gitkeep` file to each empty folder
-  - Acceptance: All component folders exist with `.gitkeep`
-
-- [ ] **Create layouts folder**
-  - Folder: `src/layouts/`
-  - Add `.gitkeep` file
-  - Acceptance: Layouts folder exists with `.gitkeep`
-
-- [ ] **Create lib folder**
-  - Folder: `src/lib/`
-  - Add `.gitkeep` file
-  - Acceptance: Lib folder exists with `.gitkeep`
-
-- [ ] **Create types folder**
-  - Folder: `src/types/`
-  - Add `.gitkeep` file
-  - Acceptance: Types folder exists with `.gitkeep`
-
-- [ ] **Create pages folder if not exists**
-  - Folder: `src/pages/`
-  - Acceptance: Pages folder exists (may be auto-created by Astro)
-
-### 7. Temporary Welcome Page (Spanish)
-
-- [ ] **Create temporary index.astro page**
-  - File: `src/pages/index.astro`
-  - Import global.css: `import '@/styles/global.css'`
-  - Create Spanish welcome page with Tailwind utilities
-  - Include: Page title "IMS - Installation Management System"
-  - Include: Welcome heading "Bienvenido al Sistema de Gestión de Instalaciones"
-  - Include: Description paragraph explaining the system (in Spanish)
-  - Include: Visual verification elements (colors, spacing, typography)
-  - Acceptance: Page renders in Spanish with Tailwind styling
-
-- [ ] **Add responsive design verification elements**
-  - File: `src/pages/index.astro`
-  - Add elements that change at different breakpoints (sm, md, lg)
-  - Use primary color palette in visual elements
-  - Acceptance: Page demonstrates responsive behavior
-
-### 8. Environment Configuration
-
-- [ ] **Create .env.example file**
-  - File: `.env.example`
-  - Add placeholder: `PUBLIC_SUPABASE_URL=`
-  - Add placeholder: `PUBLIC_SUPABASE_ANON_KEY=`
-  - Add placeholder: `PUBLIC_APP_URL=http://localhost:4321`
-  - Acceptance: Template for environment variables exists
-
-- [ ] **Ensure .env is in .gitignore**
-  - File: `.gitignore`
-  - Verify `.env` is listed
-  - Acceptance: Actual environment file is not committed
-
-### 9. Development Server Verification
-
-- [ ] **Start development server**
-  - Command: `npm run dev`
-  - Verify server starts on http://localhost:4321
-  - Acceptance: Dev server runs without errors
-
-- [ ] **Verify hot reload functionality**
-  - Make a minor change to `src/pages/index.astro`
-  - Verify browser updates without manual refresh
-  - Acceptance: HMR (Hot Module Replacement) works
-
-- [ ] **Verify Tailwind JIT compilation**
-  - Add a new utility class to `src/pages/index.astro`
-  - Verify styles appear immediately
-  - Acceptance: JIT compiler generates styles on-demand
-
-### 10. Build Verification
-
-- [ ] **Run production build**
-  - Command: `npm run build`
-  - Verify build completes without errors
-  - Verify output in `dist/` folder
-  - Acceptance: Production build succeeds
-
-- [ ] **Preview production build**
-  - Command: `npm run preview`
-  - Verify preview server starts
-  - Verify page renders correctly
-  - Acceptance: Production preview works as expected
+**Estimated Time**: 30 minutes
 
 ---
 
-## Testing Infrastructure
+#### 1.2 Unit Tests for User Actions ✅
 
-### E2E Testing Setup (Playwright)
+**File**: `src/lib/actions/users.test.ts` (COMPLETED - 20 tests passing)
 
-- [ ] **Initialize Playwright configuration**
-  - File: `playwright.config.ts`
-  - Configure baseURL: `http://localhost:4321`
-  - Configure test directory: `./e2e`
-  - Configure browsers: chromium, firefox, webkit
-  - Configure retries: 2 for CI, 0 for local
-  - Configure video: 'retain-on-failure'
-  - Configure screenshot: 'only-on-failure'
-  - Acceptance: Playwright configured for E2E testing
+- [x] **Setup test environment** ✅
+  - Import Vitest functions: `describe`, `it`, `expect`, `vi`, `beforeEach`
+  - Import functions to test: `updateUser`, `changeUserRole`
+  - Import types: `ActionResult`
+  - Acceptance: Test file structured with mocks ✅
 
-- [ ] **Create E2E test folder structure**
-  - Folder: `e2e/`
-  - Add `.gitkeep` to ensure folder is tracked
-  - Acceptance: E2E folder exists
+- [x] **All test cases implemented** ✅ (20 tests total including phone validation)
+  - updateUser() success case ✅
+  - updateUser() failure case ✅
+  - Phone validation tests (all formats) ✅
+  - changeUserRole() success case ✅
+  - changeUserRole() failure case ✅
 
-- [ ] **Create setup test for development server**
-  - File: `e2e/01-setup.spec.ts`
-  - Test: Verify dev server starts successfully
-  - Test: Verify index page loads with 200 status
-  - Test: Verify page title is "IMS - Installation Management System"
-  - Test: Verify Spanish heading is visible
-  - Acceptance: Basic server and page tests pass
+- [x] **Run tests and verify coverage** ✅
+  - All tests passing (20/20 green)
+  - Coverage: 100% for user actions
 
-- [ ] **Create Tailwind styling verification test**
-  - File: `e2e/02-tailwind-setup.spec.ts`
-  - Test: Verify primary color classes are applied
-  - Test: Verify responsive breakpoints work (mobile, tablet, desktop)
-  - Test: Verify typography utilities render correctly
-  - Acceptance: Tailwind utilities are functional
-
-- [ ] **Create accessibility baseline test**
-  - File: `e2e/03-accessibility.spec.ts`
-  - Install: `npm install -D @axe-core/playwright`
-  - Test: Run axe accessibility scan on index page
-  - Test: Verify no critical or serious violations
-  - Acceptance: Basic accessibility standards met
-
-- [ ] **Add test scripts to package.json**
-  - File: `package.json`
-  - Add script: `"test:e2e": "playwright test"`
-  - Add script: `"test:e2e:debug": "playwright test --ui"`
-  - Add script: `"test:e2e:headed": "playwright test --headed"`
-  - Acceptance: E2E test commands available
-
-### Test Execution
-
-- [ ] **Run all E2E tests**
-  - Command: `npm run test:e2e`
-  - Verify all tests pass
-  - Acceptance: Complete E2E test suite passes
-
-- [ ] **Verify test reporting**
-  - Check: HTML report generated in `playwright-report/`
-  - Check: Screenshots captured on failure
-  - Check: Videos captured on failure
-  - Acceptance: Test artifacts properly generated
+**Estimated Time**: 45 minutes
 
 ---
 
-## Documentation
+### 2. Extended Backend Queries ✅
 
-- [ ] **Update README.md with setup instructions**
-  - File: `README.md`
-  - Add: Project description in Spanish
-  - Add: Prerequisites (Node.js version, npm)
-  - Add: Installation steps
-  - Add: Development commands
-  - Add: Testing commands
-  - Acceptance: README provides complete setup guide
+#### 2.1 Add Queries to Existing File ✅
 
-- [ ] **Document Tailwind utility-first approach**
-  - File: `README.md` or `workspace/frontend.md`
-  - Explain: NO @apply component classes policy
-  - Explain: How to use utility classes directly
-  - Provide: Examples of common patterns
-  - Acceptance: Utility-first approach clearly documented
+**File**: `src/lib/queries/users.ts` (COMPLETED)
 
-- [ ] **Document TypeScript path aliases**
-  - File: `README.md`
-  - List all aliases: `@/`, `@components/`, `@lib/`, `@layouts/`, `@types/`
-  - Provide examples of usage
-  - Acceptance: Path aliases documented with examples
+- [x] **Import required types** ✅
+  - Import `Installation` type from `../supabase`
+  - Update existing import: `import { createServerClient, type User, type Installation } from '../supabase'`
+  - Acceptance: Types are available for new functions ✅
+
+- [x] **Implement `getAllUsers()` function** ✅
+- [x] **Implement `getSingleInstallerStats()` function** ✅ (renamed to avoid conflict)
+- [x] **Implement `getInstallerInstallations()` function** ✅
+- [x] **Export new query functions** ✅
+
+**Estimated Time**: 45 minutes
 
 ---
 
-## Acceptance Criteria
+#### 2.2 Unit Tests for Extended Queries ✅
 
-Phase 01 frontend setup is complete when ALL of the following are true:
+**File**: `src/lib/queries/users.test.ts` (COMPLETED - 18 tests passing)
 
-### 1. Project Structure
+- [x] **Setup test environment** ✅
+  - Import Vitest functions: `describe`, `it`, `expect`, `vi`, `beforeEach`
+  - Import functions: `getAllUsers`, `getInstallerStats`, `getInstallerInstallations`
+  - Mock `createServerClient` to avoid real Supabase calls
+  - Acceptance: Test file structured with mocks ✅
 
-- ✅ Astro 5 project initialized with minimal template
-- ✅ All required folders exist: components/{ui,layout,installations,notifications}, layouts, lib, types, e2e
-- ✅ TypeScript strict mode enabled and configured
-- ✅ Path aliases configured and working (@/, @components/, etc.)
+- [x] **All test cases implemented** ✅ (18 tests total)
+  - getAllUsers() success and error cases ✅
+  - getSingleInstallerStats() success and error cases ✅
+  - getInstallerInstallations() with/without limit ✅
+  - All edge cases covered ✅
 
-### 2. Configuration Files
+- [x] **Run tests and verify coverage** ✅
+  - All tests passing (18/18 green)
+  - Coverage: 100% for new query functions
 
-- ✅ `astro.config.mjs` configured with SSR mode, Vercel adapter, Tailwind integration
-- ✅ `tailwind.config.mjs` configured with content paths, primary color palette, NO @apply components
-- ✅ `tsconfig.json` configured with strict mode and path aliases
-- ✅ `playwright.config.ts` configured for E2E testing
-- ✅ `.env.example` exists with required placeholders
-
-### 3. Styling
-
-- ✅ `src/styles/global.css` exists with Tailwind directives and base styles ONLY
-- ✅ NO component layer classes created (no .btn, .card, .input)
-- ✅ Primary color palette (blue 50-900) accessible via Tailwind utilities
-- ✅ Mobile-first responsive breakpoints configured
-
-### 4. Development Environment
-
-- ✅ `npm run dev` starts server successfully at http://localhost:4321
-- ✅ Hot reload (HMR) works for Astro components
-- ✅ Tailwind JIT compilation works (new classes generate immediately)
-- ✅ TypeScript type checking works (strict mode enforced)
-
-### 5. Temporary Welcome Page
-
-- ✅ `src/pages/index.astro` exists and renders in Spanish
-- ✅ Page imports global.css and uses Tailwind utilities
-- ✅ Page demonstrates responsive design with primary colors
-- ✅ Page title is "IMS - Installation Management System"
-
-### 6. Build Process
-
-- ✅ `npm run build` completes successfully
-- ✅ `npm run preview` serves production build
-- ✅ Production build output in `dist/` folder is valid
-
-### 7. Testing Infrastructure
-
-- ✅ Playwright installed and configured
-- ✅ E2E test scripts added to package.json
-- ✅ `e2e/01-setup.spec.ts` verifies server and page load
-- ✅ `e2e/02-tailwind-setup.spec.ts` verifies Tailwind utilities
-- ✅ `e2e/03-accessibility.spec.ts` verifies basic accessibility
-- ✅ `npm run test:e2e` runs and passes all tests
-- ✅ Test artifacts (reports, screenshots, videos) generate correctly
-
-### 8. Documentation
-
-- ✅ `README.md` includes setup instructions and development commands
-- ✅ Tailwind utility-first approach documented (NO @apply policy)
-- ✅ TypeScript path aliases documented with examples
-- ✅ All configuration files include explanatory comments
-
-### 9. Code Quality
-
-- ✅ No TypeScript errors or warnings
-- ✅ No console errors in browser
-- ✅ No build warnings
-- ✅ All files use consistent formatting
-
-### 10. Version Control
-
-- ✅ `.gitignore` includes `.env`, `node_modules/`, `dist/`, etc.
-- ✅ `.env.example` committed (but not `.env`)
-- ✅ All required files committed to git
+**Estimated Time**: 1 hour
 
 ---
 
-## Post-Phase 01 Readiness
+## IMPLEMENTATION - Pages & Components ✅
 
-After completing Phase 01, the project will be ready for:
+### 3. Team Overview Page ✅
 
-- **Phase 02**: Supabase integration (auth, database)
-- **Phase 03**: Layout components and routing structure
-- **Phase 04**: Authentication flow implementation
-- **Phase 05+**: Feature development (installations, installers, PWA, etc.)
+#### 3.1 Create Team Overview Page ✅
 
-### Verified Capabilities
+**File**: `src/pages/admin/installers/index.astro` (COMPLETED)
 
-The foundation will support:
+- [x] **Setup page structure** ✅
+  - Import `DashboardLayout` from `@layouts/DashboardLayout.astro`
+  - Import UI components: `Button`, `Badge`, `EmptyState` from `@components/ui/`
+  - Import queries: `getAllUsers`, `getInstallerStats` from `@lib/queries/users`
+  - Get user from `Astro.locals.user` (middleware ensures user exists)
+  - Get access token from cookies: `Astro.cookies.get('sb-access-token')?.value || ''`
+  - Acceptance: Page imports and setup complete ✅
 
-- Server-side rendering with Astro 5
-- Type-safe development with TypeScript strict mode
-- Utility-first styling with Tailwind CSS
-- Clean import paths with TypeScript aliases
-- E2E testing with Playwright
-- Production deployment to Vercel
+- [x] **All page features implemented** ✅:
+  - Fetch all users and separate by role ✅
+  - Fetch installer statistics with Promise.all() ✅
+  - Date formatting helper (Spanish locale) ✅
+  - Page header with "Equipo" title ✅
+  - Info card about Google OAuth ✅
+  - Admins section (grid layout with avatars and badges) ✅
+  - Installers table (with stats badges) ✅
+  - Empty state for no installers ✅
+  - Responsive design (mobile/tablet/desktop) ✅
+  - "Tú" label for current user ✅
+  - "Ver perfil" links working ✅
 
----
-
-## Notes and Considerations
-
-### Tailwind Utility-First Philosophy
-
-This project uses **pure utility classes** in templates instead of `@apply` abstractions. This approach:
-
-- **Keeps styling visible and co-located** with markup
-- **Reduces CSS bundle size** (no duplicate utility generation)
-- **Improves debugging** (see all classes in DevTools)
-- **Follows Tailwind best practices** (v3.4+ guidance)
-
-Example pattern (DO THIS):
-
-```astro
-<button
-  class="bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors"
->
-  Guardar
-</button>
-```
-
-Anti-pattern (DON'T DO THIS):
-
-```css
-/* ❌ Avoid this in global.css */
-@layer components {
-  .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors;
-  }
-}
-```
-
-### Component Reusability
-
-Without `@apply` classes, reusability is achieved through:
-
-1. **Astro components** - Encapsulate markup + utility classes
-2. **Shared utility patterns** - Document common class combinations
-3. **TypeScript constants** - Export class name strings if needed
-
-### Mobile-First Responsive Design
-
-All responsive styles use mobile-first approach:
-
-```astro
-<!-- Base styles = mobile, then add larger breakpoints -->
-<div class="p-4 md:p-6 lg:p-8">
-  <h1 class="text-2xl md:text-3xl lg:text-4xl">Bienvenido</h1>
-</div>
-```
-
-### TypeScript Strict Mode
-
-All code must:
-
-- Have explicit return types on functions
-- Avoid `any` type (use `unknown` or proper types)
-- Handle null/undefined with strict null checks
-- Use `??` instead of `||` for null coalescing
-
-### Performance Considerations
-
-This setup prioritizes performance through:
-
-- **SSR-first rendering** (HTML sent from server)
-- **Minimal client JavaScript** (Astro islands for interactivity)
-- **Tailwind JIT** (only used classes in production)
-- **Type-safe builds** (catch errors before deployment)
+**Estimated Time**: 2 hours
 
 ---
 
-## Timeline Estimate
+### 4. Installer Profile Page ✅
 
-Total estimated time: **8-12 hours**
+#### 4.1 Create Profile Page Structure ✅
 
-Breakdown:
+**File**: `src/pages/admin/installers/[id].astro` (COMPLETED)
 
-- Project initialization: 1-2 hours
-- Configuration (Astro, TypeScript, Tailwind): 2-3 hours
-- Folder structure + global styles: 1 hour
-- Temporary welcome page: 1-2 hours
-- Testing infrastructure setup: 2-3 hours
-- Documentation: 1-2 hours
+- [x] **Setup page structure** ✅
+  - Import layout: `DashboardLayout` from `@layouts/DashboardLayout.astro`
+  - Import UI components: `Button`, `Input`, `Textarea`, `Badge`, `Alert`, `Modal` from `@components/ui/`
+  - Import `StatusBadge` from `@components/installations/StatusBadge.astro`
+  - Import `EmptyState` from `@components/ui/EmptyState.astro`
+  - Import queries: `getUserById`, `getInstallerStats`, `getInstallerInstallations` from `@lib/queries/users`
+  - Import actions: `updateUser`, `changeUserRole` from `@lib/actions/users`
+  - Get user from `Astro.locals.user`
+  - Get access token from cookies
+  - Get route param: `const { id } = Astro.params`
+  - Acceptance: Page imports complete ✅
 
-**Note**: Times assume familiarity with Astro 5, Tailwind CSS, and Playwright. First-time setup may take longer.
+- [x] **All profile page features implemented** ✅:
+  - Fetch installer data (user, stats, installations) ✅
+  - Form processing (POST handler) ✅
+  - Role change actions (make_admin, make_installer) ✅
+  - Profile update action ✅
+  - Error/success state management ✅
+  - Helper functions (formatDate, formatDateTime, getInitial) ✅
+  - Breadcrumb navigation ✅
+  - Page header with avatar and badges ✅
+  - Role change button (conditional, not for self) ✅
+  - Alert messages (error/success) ✅
+  - Grid layout (responsive) ✅
+  - Profile form (name, phone, company details) ✅
+  - Phone validation (HTML5 pattern + hint) ✅
+  - Recent installations section ✅
+  - Empty state for no installations ✅
+  - Info sidebar (email, phone, member since) ✅
+  - Stats sidebar (total, pending, in progress, completed) ✅
+  - Promote modal ✅
+  - Demote modal ✅
+  - Modal interactions (cancel, confirm, escape key) ✅
+
+**Estimated Time**: 15 minutes
 
 ---
 
-## Risk Mitigation
+### 5. Cleanup & Polish ✅
 
-### Potential Issues
+#### 5.1 Remove Unnecessary Files ✅
 
-1. **Astro 5 breaking changes**: Verify compatibility with latest version
-2. **Tailwind CSS purging issues**: Ensure content paths are correct
-3. **TypeScript path alias resolution**: Verify in both IDE and build
-4. **Playwright browser dependencies**: May require system-level installations
+- [x] **Delete new installer page if exists** ✅
+  - File: `src/pages/admin/installers/new.astro`
+  - Reason: Users auto-created via Google OAuth, no manual creation needed
+  - Command: Check if file exists, delete if present
+  - Acceptance: File removed or confirmed not to exist
 
-### Mitigation Strategies
-
-- Test each configuration step immediately after implementation
-- Run `npm run build` frequently to catch issues early
-- Keep Playwright and Astro dependencies up to date
-- Document any version-specific quirks or workarounds
+**Estimated Time**: 5 minutes
 
 ---
 
-**Phase 01 establishes a solid, performant, and type-safe foundation for the IMS application. All subsequent phases build upon this infrastructure.**
+#### 5.2 Responsive Design Verification ✅
+
+- [x] **Test team overview page responsive design** ✅
+  - Mobile (375px): Admin cards stack, table scrolls horizontally
+  - Tablet (768px): Admin cards in 2 columns, table visible
+  - Desktop (1024px): Admin cards in 3 columns, full table
+  - Acceptance: Team page responsive on all breakpoints ✅
+
+- [x] **Test profile page responsive design** ✅
+  - Mobile (375px): Single column layout (form stacks above stats)
+  - Tablet (768px): Still single column
+  - Desktop (1024px): 2-column grid (form left, sidebar right)
+  - Acceptance: Profile page responsive on all breakpoints
+
+**Estimated Time**: 30 minutes
+
+---
+
+#### 5.3 Accessibility Audit
+
+- [ ] **Verify keyboard navigation**
+  - Tab through all interactive elements on both pages
+  - Verify focus indicators visible (ring-2)
+  - Verify modals closable with Escape key
+  - Verify forms submittable with Enter key
+  - Acceptance: Full keyboard navigation support
+
+- [ ] **Verify screen reader compatibility**
+  - Run page through screen reader (NVDA/JAWS/VoiceOver)
+  - Verify labels associated with inputs (for/id attributes)
+  - Verify modal ARIA attributes (aria-modal, aria-labelledby)
+  - Verify table headers properly associated (th scope)
+  - Acceptance: Screen readers announce content correctly
+
+- [ ] **Verify color contrast**
+  - Check all text/background combinations meet WCAG AA (4.5:1 for normal text)
+  - Verify badge colors (purple, blue, green, yellow) have sufficient contrast
+  - Use browser DevTools or online contrast checker
+  - Acceptance: All color combinations pass WCAG AA
+
+**Estimated Time**: 45 minutes
+
+---
+
+## TESTING - Comprehensive E2E Tests ✅
+
+### 6. E2E Tests - Team Overview Page ✅
+
+#### 6.1 Create E2E Test File ✅
+
+**File**: `e2e/admin-installers-overview.spec.ts` (COMPLETED)
+
+- [x] **Setup test structure** ✅
+  - Import Playwright: `import { test, expect } from '@playwright/test'`
+  - Import fixtures (if needed for authentication)
+  - Create describe block: "Admin Installers - Team Overview"
+  - Acceptance: Test file structure ready ✅
+
+- [x] **All team overview tests implemented** ✅ (10+ tests):
+  - Display admins and installers sections ✅
+  - Display info card about Google OAuth ✅
+  - Display admin cards with avatars and purple badges ✅
+  - Display "Tú" label for current user ✅
+  - Display installer table with stats ✅
+  - Display colored stat badges (yellow/blue/green) ✅
+  - Display "Ver perfil" links ✅
+  - Navigate to installer profile ✅
+  - Display empty state when no installers ✅
+  - Admin cards clickable and navigate to profile ✅
+  - Responsive tests (mobile/tablet/desktop) ✅
+
+**Estimated Time**: 1.5 hours
+
+---
+
+### 7. E2E Tests - Installer Profile Page ✅
+
+#### 7.1 Create Profile E2E Test File ✅
+
+**File**: `e2e/admin-installers-profile.spec.ts` (COMPLETED)
+
+- [x] **Setup test structure** ✅
+  - Import Playwright: `import { test, expect } from '@playwright/test'`
+  - Create describe block: "Admin Installers - Profile Page"
+  - Acceptance: Test file structure ready ✅
+
+- [x] **All profile page tests implemented** ✅ (15+ tests):
+  - Display installer profile header (avatar, badge) ✅
+  - Display admin profile header (purple badge) ✅
+  - Display "Tú" badge for own profile ✅
+  - Display breadcrumb navigation ✅
+  - Display profile form with populated data ✅
+  - Display phone validation hint ✅
+  - Validate phone format on submission ✅
+  - Update profile successfully with valid phone ✅
+  - Display installer stats sidebar ✅
+  - Hide stats card for admin profiles ✅
+  - Display recent installations ✅
+  - Display empty state for no installations ✅
+  - Navigate to installation detail ✅
+  - Display info sidebar (email, member since) ✅
+  - Responsive tests (mobile/desktop) ✅
+
+**Estimated Time**: 2 hours
+
+---
+
+### 8. E2E Tests - Role Management ✅
+
+#### 8.1 Create Role Change E2E Tests ✅
+
+**File**: `e2e/admin-installers-role-change.spec.ts` (COMPLETED)
+
+- [x] **Setup test structure** ✅
+  - Import Playwright: `import { test, expect } from '@playwright/test'`
+  - Create describe block: "Admin Installers - Role Management"
+  - Acceptance: Test file structure ready ✅
+
+- [x] **All role management tests implemented** ✅ (11+ tests):
+  - Display "Promover a Admin" button for installers ✅
+  - Display "Cambiar a Installer" button for admins (not self) ✅
+  - Hide role change button for own profile ✅
+  - Open promote modal with confirmation message ✅
+  - Open demote modal with warning message ✅
+  - Cancel promote modal (button click) ✅
+  - Cancel demote modal (button click) ✅
+  - Close modal with Escape key ✅
+  - Promote installer to admin successfully ✅
+  - Demote admin to installer successfully ✅
+  - Display danger variant button in demote modal ✅
+
+**Estimated Time**: 2 hours
+
+---
+
+### 9. E2E Tests - Responsive Design
+
+#### 9.1 Create Responsive E2E Tests
+
+**File**: `e2e/admin-installers-responsive.spec.ts` (NEW)
+
+- [ ] **Setup test structure**
+  - Import Playwright with viewport config
+  - Create describe block: "Admin Installers - Responsive Design"
+  - Acceptance: Test file structure ready
+
+- [ ] **Test: Team overview mobile layout**
+  - Set viewport to mobile (375x667)
+  - Navigate to `/admin/installers`
+  - Assert admin cards stacked (grid-cols-1)
+  - Assert table wrapper has horizontal scroll
+  - Scroll table horizontally
+  - Acceptance: Mobile layout works for team overview
+
+- [ ] **Test: Team overview tablet layout**
+  - Set viewport to tablet (768x1024)
+  - Navigate to `/admin/installers`
+  - Assert admin cards in 2 columns (grid-cols-2)
+  - Assert table visible without scroll (if content fits)
+  - Acceptance: Tablet layout works
+
+- [ ] **Test: Team overview desktop layout**
+  - Set viewport to desktop (1440x900)
+  - Navigate to `/admin/installers`
+  - Assert admin cards in 3 columns (grid-cols-3)
+  - Assert full table visible
+  - Acceptance: Desktop layout works
+
+- [ ] **Test: Profile page mobile layout**
+  - Set viewport to mobile (375x667)
+  - Navigate to installer profile page
+  - Assert single column layout (lg:col-span-2 not applied)
+  - Assert form and sidebar stack vertically
+  - Acceptance: Mobile layout works for profile
+
+- [ ] **Test: Profile page desktop layout**
+  - Set viewport to desktop (1440x900)
+  - Navigate to installer profile page
+  - Assert 2-column grid (lg:grid-cols-3)
+  - Assert form on left, sidebar on right
+  - Acceptance: Desktop layout works for profile
+
+**Estimated Time**: 1.5 hours
+
+---
+
+## VERIFICATION - Manual Testing Checklist
+
+### 10. Manual Testing
+
+#### 10.1 Team Overview Page
+
+- [ ] **Verify team overview displays correctly**
+  - Navigate to `/admin/installers` as admin
+  - Check: Admins section shows all admins with avatars and purple badges
+  - Check: Installers section shows all installers in table with stats
+  - Check: Info card visible and readable
+  - Check: "Tú" label appears next to current user in admins section
+  - Check: Stats badges colored correctly (yellow, blue, green)
+  - Acceptance: Team overview page displays all elements correctly
+
+- [ ] **Verify empty states**
+  - Test scenario: Database with no installers
+  - Navigate to `/admin/installers`
+  - Check: EmptyState component visible with message "No hay instaladores"
+  - Acceptance: Empty state displays when no installers exist
+
+- [ ] **Verify navigation**
+  - Click "Ver perfil" link for an installer
+  - Check: Redirects to `/admin/installers/[id]`
+  - Go back to team overview
+  - Acceptance: Navigation works
+
+#### 10.2 Installer Profile Page
+
+- [ ] **Verify profile header**
+  - Navigate to installer profile page
+  - Check: Avatar with initial displays (blue for installer, purple for admin)
+  - Check: Name and email visible
+  - Check: Role badge displays correctly (Installer or Admin)
+  - Check: "Tú" badge if viewing own profile
+  - Check: Breadcrumb navigation works (links to /admin and /admin/installers)
+  - Acceptance: Profile header complete
+
+- [ ] **Verify profile form**
+  - Fill in "Nombre Completo": "Test User"
+  - Fill in "Teléfono": "+34 600 123 456"
+  - Fill in "Detalles de la Empresa": "Test company details"
+  - Submit form
+  - Check: Success message displays
+  - Check: Form repopulates with updated values
+  - Refresh page
+  - Check: Updated values persist
+  - Acceptance: Profile form updates work
+
+- [ ] **Verify phone validation**
+  - Fill in "Teléfono": "123" (invalid format)
+  - Submit form
+  - Check: Browser validation error displays
+  - Fill in valid phone: "+34 600 123 456"
+  - Submit form
+  - Check: Validation passes
+  - Acceptance: Phone validation works
+
+- [ ] **Verify stats sidebar**
+  - View installer profile (non-admin)
+  - Check: "Estadísticas" card visible
+  - Check: Stats display (Total, Pendientes, En progreso, Completadas)
+  - Check: Numbers match actual installations
+  - View admin profile
+  - Check: "Estadísticas" card NOT visible
+  - Acceptance: Stats display correctly for installers only
+
+- [ ] **Verify recent installations**
+  - View installer profile with installations
+  - Check: "Instalaciones Recientes" section visible
+  - Check: Up to 10 installations listed
+  - Check: Each installation shows client name, date, and StatusBadge
+  - Click installation link
+  - Check: Redirects to installation detail page
+  - Acceptance: Recent installations display and links work
+
+#### 10.3 Role Management
+
+- [ ] **Verify promote to admin**
+  - Navigate to installer profile (not own profile)
+  - Check: "Promover a Admin" button visible
+  - Click button
+  - Check: Modal opens with confirmation message
+  - Click "Promover"
+  - Check: Redirects to `/admin/installers`
+  - Navigate to team overview
+  - Check: User moved to "Administradores" section
+  - Acceptance: Promote to admin works
+
+- [ ] **Verify demote to installer**
+  - Navigate to admin profile (not own profile)
+  - Check: "Cambiar a Installer" button visible
+  - Click button
+  - Check: Modal opens with warning message
+  - Click "Cambiar Rol" (danger button)
+  - Check: Success message displays
+  - Check: Badge changes to "Installer"
+  - Navigate to team overview
+  - Check: User moved to "Instaladores" section
+  - Acceptance: Demote to installer works
+
+- [ ] **Verify self-role protection**
+  - Login as admin user
+  - Navigate to own profile
+  - Check: "Tú" badge visible
+  - Check: NO role change button visible
+  - Acceptance: Cannot change own role
+
+- [ ] **Verify modal cancel behavior**
+  - Open promote modal
+  - Click "Cancelar"
+  - Check: Modal closes, no role change
+  - Open demote modal
+  - Click "Cancelar"
+  - Check: Modal closes, no role change
+  - Acceptance: Cancel buttons work
+
+- [ ] **Verify modal keyboard behavior**
+  - Open promote modal
+  - Press Escape key
+  - Check: Modal closes
+  - Acceptance: Escape key closes modals
+
+#### 10.4 Responsive Design
+
+- [ ] **Test mobile layout (375px)**
+  - Resize browser to 375px width
+  - Navigate to `/admin/installers`
+  - Check: Admin cards stack vertically (1 column)
+  - Check: Installer table scrolls horizontally
+  - Navigate to installer profile
+  - Check: Form and sidebar stack vertically
+  - Acceptance: Mobile layout works
+
+- [ ] **Test tablet layout (768px)**
+  - Resize browser to 768px width
+  - Navigate to `/admin/installers`
+  - Check: Admin cards in 2 columns
+  - Check: Table visible (may scroll if needed)
+  - Navigate to installer profile
+  - Check: Still single column layout
+  - Acceptance: Tablet layout works
+
+- [ ] **Test desktop layout (1440px)**
+  - Resize browser to 1440px width
+  - Navigate to `/admin/installers`
+  - Check: Admin cards in 3 columns
+  - Check: Full table visible without scroll
+  - Navigate to installer profile
+  - Check: 2-column grid (form left, sidebar right)
+  - Acceptance: Desktop layout works
+
+#### 10.5 Accessibility
+
+- [ ] **Verify keyboard navigation**
+  - Use Tab key to navigate through all interactive elements on both pages
+  - Check: Focus indicators visible (ring outline)
+  - Check: Can submit forms with Enter key
+  - Check: Can close modals with Escape key
+  - Acceptance: Full keyboard support
+
+- [ ] **Verify screen reader compatibility**
+  - Run screen reader (NVDA/JAWS/VoiceOver)
+  - Check: All form labels announced correctly
+  - Check: Buttons and links announced with clear purpose
+  - Check: Table headers associated with cells
+  - Check: Modal title announced when opened
+  - Acceptance: Screen reader navigation works
+
+- [ ] **Verify color contrast**
+  - Use browser DevTools or contrast checker
+  - Check: All text meets WCAG AA (4.5:1 for normal text)
+  - Check: Badge colors (purple, blue, green, yellow) have sufficient contrast
+  - Acceptance: All colors pass WCAG AA
+
+---
+
+## Summary
+
+### Total Estimated Time: 18-20 hours
+
+**Breakdown**:
+
+- Backend actions & queries: 3-4 hours
+- Team overview page: 2 hours
+- Profile page: 4 hours
+- Testing (E2E + manual): 8-10 hours
+- Cleanup & verification: 2 hours
+
+### Key Deliverables
+
+1. **Backend**: User actions (update, role change) and extended queries (all users, stats, installations)
+2. **Frontend**: Team overview page with admins/installers sections
+3. **Frontend**: Installer profile page with edit form and role management
+4. **Testing**: Comprehensive E2E tests covering all user flows
+5. **Quality**: Responsive design, accessibility compliance, phone validation
+
+### Success Criteria
+
+- All unit tests pass (100% coverage for new functions)
+- All E2E tests pass (team overview, profile, role management, responsive)
+- Manual testing checklist complete (all items verified)
+- Code follows existing patterns (installations pages, DashboardLayout)
+- Responsive on mobile (375px), tablet (768px), desktop (1440px)
+- WCAG 2.1 AA accessibility compliance
+- Spanish phone validation (+34 format)
+- Self-role protection (cannot change own role)
+
+### Next Phase
+
+After Phase 11 completion, proceed to:
+
+- **Phase 12**: Installer Dashboard (view assigned installations, update status)

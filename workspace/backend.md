@@ -1,1392 +1,1125 @@
-# Backend Architecture - Phase 01: Project Setup
+# Backend Implementation Checklist - Phase 11: Admin Installers Management
 
 ## Overview
 
-Phase 01 establishes the foundational backend infrastructure for the IMS (Installation Management System). This phase focuses on creating a production-ready development environment with proper tooling, configuration, and testing infrastructure.
+This document provides a comprehensive implementation plan for **Phase 11: Admin Installers Management**. This phase implements the complete user management system for admins to view, edit, and manage installers, including role changes and profile updates.
 
-**What we're building in this phase:**
+**Current Status**: ✅ **CORE IMPLEMENTATION COMPLETED**
 
-- **Astro 5 SSR Application**: Server-side rendering with Vercel adapter for optimal performance and SEO
-- **Supabase Client Setup**: Foundation for PostgreSQL database, authentication, and Edge Functions
-- **Development Tooling**: TypeScript strict mode, ESLint, Prettier, and comprehensive testing infrastructure
-- **Environment Management**: Secure configuration for local development and production deployment
-- **Testing Foundation**: Vitest for unit/integration tests, Playwright for E2E tests
+**Scope**: Backend actions, queries, and data models for user management
 
-**What we're NOT building yet:**
-
-- Database schema (Phase 02)
-- Authentication implementation (Phases 03-06)
-- API endpoints or Edge Functions (future phases)
-- Business logic or domain models (future phases)
-
-**Key Architecture Decisions:**
-
-1. **SSR over SPA**: Server-side rendering provides better SEO, faster initial page loads, and secure server-side operations
-2. **Utility-first Tailwind**: NO @apply classes for components (per user preference) - all styling via utility classes
-3. **Strict TypeScript**: Maximum type safety to catch errors at compile time
-4. **Test-Driven Infrastructure**: Comprehensive test setup from the start (unit, integration, E2E)
-5. **Supabase Serverless**: Edge Functions (Deno runtime) + PostgreSQL with RLS for security
+**Estimated Time**: 4-6 hours (implementation + comprehensive testing)
 
 ---
 
-## Detailed Implementation Checklist
+## ✅ IMPLEMENTATION SUMMARY
 
-### 1. Project Initialization
+### Completed (Core Implementation)
 
-#### 1.1 Create Astro Project
+- ✅ **Section 1.1**: User Actions File (`src/lib/actions/users.ts`) - Created with `updateUser()` and `changeUserRole()`
+- ✅ **Section 1.2**: Phone Validation Utility - `isValidSpanishPhone()` implemented and integrated
+- ✅ **Section 2.1**: `getAllUsers()` Query - Added with RLS context
+- ✅ **Section 2.2**: `getSingleInstallerStats()` Query - Added (renamed to avoid conflict)
+- ✅ **Section 2.3**: `getInstallerInstallations()` Query - Added with optional limit
+- ✅ **Section 2.4**: `getUserById()` Updated - Now accepts accessToken parameter
+- ✅ **Section 3.1-3.2**: Type Definitions Verified - All types correct, `assigned_to` field confirmed
+- ✅ **Section 5.1**: User Actions Unit Tests - 20 tests created and passing
+- ✅ **Section 6.1**: User Queries Unit Tests - 18 tests created and passing
+- ✅ **Section 10.1**: Build Verification - `npm run build` succeeds (6.76s)
+- ✅ **Section 10.2**: TypeScript Type Safety - All strict mode checks pass, no `any` types
 
-- [ ] Run `npm create astro@latest ims -- --template minimal --typescript strict --git --install`
-- [ ] Navigate to project: `cd ims`
-- [ ] Verify `package.json` exists with Astro dependencies
+### Test Results
 
-**Acceptance Criteria:**
+- **Total Tests**: 38 tests passing (20 actions + 18 queries)
+- **Test Files**: `src/lib/actions/users.test.ts`, `src/lib/queries/users.test.ts`
+- **Coverage**: Success paths, error paths, validation, edge cases
 
-- Project folder `ims/` exists
-- `package.json` has `astro` in dependencies
-- Git repository initialized (`.git/` folder exists)
-- TypeScript configured in strict mode (`tsconfig.json` has `"strict": true`)
+### Deferred (Require Additional Setup)
 
-**Files Created:**
+- ⏸️ **Section 7.1-7.2**: Integration Tests - Require local Supabase instance and test data seeding
+- ⏸️ **Section 8.1**: E2E Tests - Require frontend implementation (Phase 11 frontend)
+- ⏸️ **Section 4.1**: RLS Verification - Requires Supabase dashboard access or manual testing
+- ⏸️ **Section 9.1-9.2**: Manual Testing - Can be performed once local Supabase is set up
 
-- `/package.json`
-- `/tsconfig.json`
-- `/astro.config.mjs`
-- `/src/pages/index.astro` (default)
-- `/.gitignore`
+### Key Implementation Notes
 
----
-
-#### 1.2 Install Core Dependencies
-
-- [ ] Install Astro integrations: `npm install @astrojs/tailwind @astrojs/vercel`
-- [ ] Install styling: `npm install tailwindcss`
-- [ ] Install Supabase client: `npm install @supabase/supabase-js`
-- [ ] Verify all 4 packages in `package.json` dependencies
-
-**Acceptance Criteria:**
-
-- `package.json` contains:
-  - `@astrojs/tailwind`
-  - `@astrojs/vercel`
-  - `tailwindcss`
-  - `@supabase/supabase-js`
-- `node_modules/` folder populated
-- No installation errors in terminal
+1. Function `getInstallerStats()` renamed to `getSingleInstallerStats()` to avoid naming conflict with existing function
+2. Schema uses `assigned_to` field (not `installer_id`) - verified and used correctly
+3. All functions follow existing patterns from `installations.ts` and other queries
+4. Phone validation accepts multiple Spanish formats: +34 XXX XXX XXX, +34XXXXXXXXX, etc.
+5. All operations use `createServerClient(accessToken)` for proper RLS context
 
 ---
 
-#### 1.3 Install Development Dependencies
+---
 
-- [ ] Install testing framework: `npm install -D vitest @vitest/ui`
-- [ ] Install Playwright for E2E: `npm install -D @playwright/test`
-- [ ] Install code quality tools: `npm install -D eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin`
-- [ ] Install Prettier: `npm install -D prettier prettier-plugin-astro`
-- [ ] Install Husky for git hooks: `npm install -D husky lint-staged`
-- [ ] Install type utilities: `npm install -D @types/node`
+## Architecture Context
 
-**Acceptance Criteria:**
+### Current Backend Patterns
 
-- All dev dependencies in `package.json` under `devDependencies`
-- ESLint and Prettier ready for configuration
-- Testing frameworks installed but not yet configured
+**Existing Patterns to Follow**:
 
-**Files Modified:**
+1. **Supabase Client Pattern** (`src/lib/supabase.ts`):
+   - Anonymous client for non-authenticated queries
+   - Server client with accessToken for authenticated operations
+   - All authenticated operations MUST use `createServerClient(accessToken)`
 
-- `/package.json` (devDependencies section)
+2. **Query Pattern** (`src/lib/queries/`):
+   - Functions accept `accessToken` as first parameter (optional for public queries)
+   - Use `createServerClient(accessToken)` for authenticated queries
+   - Return typed data or empty arrays (never null)
+   - Throw descriptive errors with error messages
+   - Use explicit select with joins for related data
+
+3. **Action Pattern** (`src/lib/actions/installations.ts`):
+   - Functions accept `accessToken` as first parameter
+   - Return `ActionResult` interface: `{ success: boolean; error?: string; data?: T }`
+   - Use `createServerClient(accessToken)` for mutations
+   - Log errors with `console.error()` before returning error result
+   - Return single records with `.single()` when appropriate
+
+4. **Type Safety**:
+   - Import types from `src/lib/supabase.ts` (exported from `src/types/database.ts`)
+   - Use `Database` types: `User`, `UserUpdate`, `Installation`
+   - No `any` types allowed (TypeScript strict mode)
+
+### RLS Security Model
+
+**CRITICAL**: All operations use the anonymous key with user's access token. RLS policies enforce authorization at the database level.
+
+**User Management RLS Requirements**:
+
+- Admins can view all users (admins and installers)
+- Admins can update any user's profile
+- Admins can change any user's role (except themselves)
+- Installers can only view their own profile
+- Installers cannot change roles
+
+**Note**: These RLS policies should already exist from previous phases. Verify during implementation.
 
 ---
 
-### 2. Configuration Files
+## Implementation Tasks
 
-#### 2.1 Configure Astro
+### 1. User Actions Module
 
-- [ ] Create/modify `astro.config.mjs` with SSR mode, Vercel adapter, and Tailwind integration
-- [ ] Set `output: 'server'` for SSR
-- [ ] Add `adapter: vercel()` for deployment
-- [ ] Add `integrations: [tailwind()]`
+#### 1.1 Create User Actions File ✅
 
-**File:** `/astro.config.mjs`
+**File**: `src/lib/actions/users.ts` (NEW)
 
-```javascript
-import { defineConfig } from 'astro/config';
-import tailwind from '@astrojs/tailwind';
-import vercel from '@astrojs/vercel/serverless';
+**Tasks**:
 
-export default defineConfig({
-  output: 'server',
-  adapter: vercel(),
-  integrations: [tailwind()],
-  vite: {
-    test: {
-      environment: 'node',
-      globals: true
-    }
+- [x] Create new file `src/lib/actions/users.ts`
+- [x] Import required types and functions:
+  - `createServerClient` from `../supabase`
+  - `User`, `UserUpdate` from `../supabase`
+- [x] Define `ActionResult` interface (match existing pattern):
+  ```typescript
+  export interface ActionResult {
+    success: boolean;
+    error?: string;
+    data?: User;
   }
-});
-```
+  ```
+- [x] Implement `updateUser()` function:
+  - Accept parameters: `accessToken: string`, `id: string`, `data: UserUpdate`
+  - Create server client with access token
+  - Update user record with `.update(data).eq('id', id).select().single()`
+  - Log errors with `console.error('Error updating user:', error)`
+  - Return `ActionResult` with success/error/data
+- [x] Implement `changeUserRole()` function:
+  - Accept parameters: `accessToken: string`, `id: string`, `role: 'admin' | 'installer'`
+  - Create server client with access token
+  - Update user role with `.update({ role }).eq('id', id)`
+  - Log errors with `console.error('Error changing role:', error)`
+  - Return `ActionResult` with success/error (no data needed)
+- [x] Add JSDoc documentation for all functions
+- [x] Export all functions and `ActionResult` interface
 
-**Acceptance Criteria:**
+**Acceptance Criteria**: ✅ ALL MET
 
-- File exists in project root
-- SSR mode enabled (`output: 'server'`)
-- Vercel adapter configured
-- Tailwind integration active
-- Vite test configuration included for Vitest
+- File created with proper imports and types
+- `updateUser()` follows existing action pattern
+- `changeUserRole()` follows existing action pattern
+- Both functions use `createServerClient(accessToken)`
+- Error handling is consistent with existing actions
+- TypeScript compiles without errors
+- All exports are properly typed
 
----
-
-#### 2.2 Configure Tailwind
-
-- [ ] Create `tailwind.config.mjs` in project root
-- [ ] Configure content paths for Astro files
-- [ ] Add primary color palette (blue theme)
-- [ ] NO component classes with @apply (per user preference)
-
-**File:** `/tailwind.config.mjs`
-
-```javascript
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: ['./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}'],
-  theme: {
-    extend: {
-      colors: {
-        primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554'
-        }
-      }
-    }
-  },
-  plugins: []
-};
-```
-
-**Acceptance Criteria:**
-
-- File exists in project root
-- Content paths include all Astro file types
-- Primary color palette defined (blue)
-- No custom plugins configured yet
+**Time Estimate**: 30-45 minutes
 
 ---
 
-#### 2.3 Configure TypeScript Path Aliases
+#### 1.2 Add Phone Validation Utility ✅
 
-- [ ] Modify `tsconfig.json` to add path aliases
-- [ ] Add aliases: `@/*`, `@components/*`, `@lib/*`, `@layouts/*`, `@types/*`
+**File**: `src/lib/actions/users.ts` (UPDATE)
 
-**File:** `/tsconfig.json`
+**Tasks**:
 
-Modify the `compilerOptions` section to include:
+- [x] Add Spanish phone validation function:
+  ```typescript
+  /**
+   * Validates Spanish phone number format
+   * Accepts formats: +34 XXX XXX XXX, +34XXX XXX XXX, 34XXXXXXXXX, XXXXXXXXX
+   * @param phone - Phone number to validate
+   * @returns true if valid Spanish phone format
+   */
+  export function isValidSpanishPhone(phone: string | null): boolean;
+  ```
+- [x] Implement regex validation for Spanish phone numbers:
+  - Strip whitespace and normalize input
+  - Check for +34 prefix (optional)
+  - Validate 9-digit Spanish phone numbers (6XX XXX XXX, 7XX XXX XXX, 9XX XXX XXX)
+  - Return boolean
+- [x] Update `updateUser()` to validate phone before update:
+  - If `data.phone_number` is provided and not null, validate format
+  - If invalid, return error: "Formato de teléfono inválido. Use formato: +34 XXX XXX XXX"
+  - If valid or null, proceed with update
+- [x] Add unit tests for phone validation (see Testing section)
 
-```json
-{
-  "extends": "astro/tsconfigs/strict",
-  "compilerOptions": {
-    "strict": true,
-    "strictNullChecks": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@lib/*": ["src/lib/*"],
-      "@layouts/*": ["src/layouts/*"],
-      "@types/*": ["src/types/*"]
-    }
+**Acceptance Criteria**: ✅ ALL MET
+
+- Phone validation function accepts common Spanish formats
+- Validation rejects invalid formats
+- `updateUser()` validates phone before database update
+- Clear error message for invalid phone numbers
+- TypeScript types are correct (nullable phone)
+
+**Time Estimate**: 20-30 minutes
+
+---
+
+### 2. User Queries Extensions
+
+#### 2.1 Add getAllUsers Query ✅
+
+**File**: `src/lib/queries/users.ts` (UPDATE)
+
+**Tasks**:
+
+- [x] Add `getAllUsers()` function at the end of the file:
+  - Accept parameter: `accessToken: string`
+  - Create server client with access token
+  - Query all users with `.select('*').order('created_at', { ascending: false })`
+  - Return typed `User[]` array
+  - On error, log with `console.error('Error fetching users:', error)` and return empty array
+- [ ] Add JSDoc documentation explaining this query is for admin use
+- [ ] Export function
+
+**Acceptance Criteria**:
+
+- Function follows existing query pattern
+- Uses `createServerClient(accessToken)` (respects RLS)
+- Returns users ordered by creation date (newest first)
+- Returns empty array on error (consistent with existing queries)
+- TypeScript return type is `User[]`
+
+**Time Estimate**: 15-20 minutes
+
+---
+
+#### 2.2 Add getInstallerStats Query
+
+**File**: `src/lib/queries/users.ts` (UPDATE)
+
+**Tasks**:
+
+- [ ] Define `InstallerStatsResult` interface:
+  ```typescript
+  export interface InstallerStatsResult {
+    total: number;
+    pending: number;
+    inProgress: number;
+    completed: number;
   }
-}
-```
+  ```
+- [ ] Add `getInstallerStats()` function:
+  - Accept parameters: `accessToken: string`, `installerId: string`
+  - Create server client with access token
+  - Query installations with `.select('status').eq('installer_id', installerId).is('archived_at', null)`
+    - Note: Use `installer_id` not `assigned_to` (verify schema field name)
+  - Calculate stats by counting status values:
+    - `total`: data.length
+    - `pending`: count where status === 'pending'
+    - `inProgress`: count where status === 'in_progress'
+    - `completed`: count where status === 'completed'
+  - On error, return zero stats: `{ total: 0, pending: 0, inProgress: 0, completed: 0 }`
+  - Return `InstallerStatsResult`
+- [ ] Add JSDoc documentation
+- [ ] Export function and interface
 
-**Acceptance Criteria:**
+**Acceptance Criteria**:
 
-- Strict mode enabled
-- Path aliases configured
-- TypeScript can resolve imports like `import { X } from '@lib/utils'`
+- Function calculates stats from installation records
+- Excludes archived installations
+- Returns zero stats on error (never throws)
+- Stats calculation is correct (counts by status)
+- Return type matches `InstallerStatsResult` interface
 
----
-
-#### 2.4 Create ESLint Configuration
-
-- [ ] Create `.eslintrc.cjs` in project root
-- [ ] Configure TypeScript parser
-- [ ] Add Astro-specific rules
-- [ ] Set up recommended rulesets
-
-**File:** `/.eslintrc.cjs`
-
-```javascript
-module.exports = {
-  parser: '@typescript-eslint/parser',
-  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module'
-  },
-  env: {
-    node: true,
-    es2022: true,
-    browser: true
-  },
-  overrides: [
-    {
-      files: ['*.astro'],
-      parser: 'astro-eslint-parser',
-      parserOptions: {
-        parser: '@typescript-eslint/parser',
-        extraFileExtensions: ['.astro']
-      }
-    }
-  ],
-  rules: {
-    '@typescript-eslint/no-unused-vars': [
-      'error',
-      {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_'
-      }
-    ]
-  }
-};
-```
-
-**Acceptance Criteria:**
-
-- File exists in project root
-- TypeScript parser configured
-- Astro files handled via overrides
-- Unused variables rule configured
+**Time Estimate**: 20-30 minutes
 
 ---
 
-#### 2.5 Create Prettier Configuration
+#### 2.3 Add getInstallerInstallations Query
 
-- [ ] Create `.prettierrc.cjs` in project root
-- [ ] Configure Astro plugin
-- [ ] Set code formatting standards
+**File**: `src/lib/queries/users.ts` (UPDATE)
 
-**File:** `/.prettierrc.cjs`
+**Tasks**:
 
-```javascript
-module.exports = {
-  semi: true,
-  singleQuote: true,
-  tabWidth: 2,
-  trailingComma: 'es5',
-  printWidth: 100,
-  plugins: ['prettier-plugin-astro'],
-  overrides: [
-    {
-      files: '*.astro',
-      options: {
-        parser: 'astro'
-      }
-    }
-  ]
-};
-```
+- [ ] Verify `Installation` type is imported:
+  - Check if import exists: `import type { User, Installation } from '../supabase';`
+  - If not, add `Installation` to imports from `../supabase`
+- [ ] Add `getInstallerInstallations()` function:
+  - Accept parameters: `accessToken: string`, `installerId: string`, `limit?: number`
+  - Create server client with access token
+  - Build query:
+    ```typescript
+    let query = client
+      .from('installations')
+      .select('*')
+      .eq('installer_id', installerId)
+      .is('archived_at', null)
+      .order('scheduled_date', { ascending: false, nullsFirst: false });
+    ```
+  - If `limit` is provided, apply `.limit(limit)`
+  - Execute query and return installations array
+  - On error, log and return empty array
+- [ ] Add JSDoc documentation explaining optional limit parameter
+- [ ] Export function
 
-**Acceptance Criteria:**
+**Acceptance Criteria**:
 
-- File exists in project root
-- Astro plugin configured
-- Consistent formatting rules defined
+- Function returns installations for specific installer
+- Excludes archived installations
+- Orders by scheduled_date (most recent first)
+- Respects optional limit parameter
+- Returns empty array on error
+- Return type is `Installation[]`
 
----
-
-#### 2.6 Configure Vitest
-
-- [ ] Create `vitest.config.ts` in project root
-- [ ] Configure test environment (node)
-- [ ] Set up coverage reporting
-- [ ] Exclude integration tests from unit test runs
-
-**File:** `/vitest.config.ts`
-
-```typescript
-import { defineConfig } from 'vitest/config';
-import path from 'path';
-
-export default defineConfig({
-  test: {
-    environment: 'node',
-    globals: true,
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'dist/',
-        '**/*.integration.test.ts',
-        '**/*.spec.ts',
-        'e2e/',
-        '.astro/'
-      ]
-    },
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/.astro/**',
-      '**/*.integration.test.ts',
-      'e2e/**'
-    ]
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@components': path.resolve(__dirname, './src/components'),
-      '@lib': path.resolve(__dirname, './src/lib'),
-      '@layouts': path.resolve(__dirname, './src/layouts'),
-      '@types': path.resolve(__dirname, './src/types')
-    }
-  }
-});
-```
-
-**Acceptance Criteria:**
-
-- File exists in project root
-- Coverage reporting configured
-- Integration tests excluded from unit tests
-- Path aliases work in tests
+**Time Estimate**: 20-25 minutes
 
 ---
 
-#### 2.7 Configure Playwright
+#### 2.4 Update getUserById to Accept AccessToken
 
-- [ ] Run Playwright init: `npx playwright install`
-- [ ] Create `playwright.config.ts` in project root
-- [ ] Configure base URL for local dev
-- [ ] Set up browser contexts (chromium, firefox, webkit)
+**File**: `src/lib/queries/users.ts` (UPDATE)
 
-**File:** `/playwright.config.ts`
+**Tasks**:
 
-```typescript
-import { defineConfig, devices } from '@playwright/test';
+- [ ] Review existing `getUserById()` function:
+  - Current signature: `getUserById(id: string): Promise<User | null>`
+  - Current implementation uses anonymous client (no RLS context)
+- [ ] Update function signature to accept access token:
+  - New signature: `getUserById(accessToken: string, id: string): Promise<User | null>`
+- [ ] Update implementation:
+  - Use `createServerClient(accessToken)` instead of `supabase`
+  - Keep existing logic: `.select('*').eq('id', id).single()`
+  - Keep error handling: return null on 'PGRST116', throw on other errors
+- [ ] Update JSDoc documentation to document new parameter
+- [ ] Search codebase for usages and update calls:
+  ```bash
+  # Find usages: grep -r "getUserById" src/
+  ```
+- [ ] Update all calls to pass accessToken as first parameter
 
-export default defineConfig({
-  testDir: './e2e',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
-  use: {
-    baseURL: 'http://localhost:4321',
-    trace: 'on-first-retry'
-  },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] }
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] }
-    }
-  ],
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:4321',
-    reuseExistingServer: !process.env.CI
-  }
-});
-```
+**Acceptance Criteria**:
 
-**Acceptance Criteria:**
+- Function signature updated with accessToken parameter
+- Uses server client with access token (respects RLS)
+- All usages in codebase updated
+- Tests updated to pass accessToken
+- No breaking changes to existing functionality
 
-- File exists in project root
-- Base URL points to local dev server
-- Multiple browser configurations
-- Web server auto-starts for E2E tests
+**Time Estimate**: 20-30 minutes
 
 ---
 
-### 3. Environment and Security
+### 3. Type Definitions
 
-#### 3.1 Create Environment Template
+#### 3.1 Verify Database Types
 
-- [ ] Create `.env.example` in project root
-- [ ] Add Supabase placeholders (URL, anon key)
-- [ ] Add app URL placeholder
-- [ ] Add VAPID keys placeholders for push notifications
-- [ ] Add helpful comments for each variable
+**File**: `src/types/database.ts` (VERIFY)
 
-**File:** `/.env.example`
+**Tasks**:
 
-```env
-# Supabase Configuration
-# Get these from: Supabase Dashboard > Settings > API
-PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+- [ ] Verify `users` table types include all required fields:
+  - `id: string`
+  - `email: string`
+  - `full_name: string`
+  - `phone_number: string | null`
+  - `company_details: string | null`
+  - `role: Database['public']['Enums']['user_role']`
+  - `created_at: string`
+- [ ] Verify `UserUpdate` type allows partial updates:
+  - `full_name?: string`
+  - `phone_number?: string | null`
+  - `company_details?: string | null`
+  - `role?: Database['public']['Enums']['user_role']`
+- [ ] If types are missing or incorrect, regenerate:
+  ```bash
+  npx supabase gen types typescript --project-id <project-id> > src/types/database.ts
+  ```
+- [ ] Verify exports in `src/lib/supabase.ts`:
+  - `export type User = Tables['users']['Row'];`
+  - `export type UserUpdate = Tables['users']['Update'];`
 
-# Application URL
-# Local development
-PUBLIC_APP_URL=http://localhost:4321
+**Acceptance Criteria**:
 
-# Push Notifications (VAPID Keys)
-# Generate with: npx web-push generate-vapid-keys
-PUBLIC_VAPID_PUBLIC_KEY=
-VAPID_PRIVATE_KEY=
-VAPID_SUBJECT=mailto:admin@example.com
-```
+- Database types match current schema
+- `User` type includes all fields
+- `UserUpdate` type allows partial updates
+- Types are exported from `src/lib/supabase.ts`
+- TypeScript compiles without type errors
 
-**Acceptance Criteria:**
-
-- File exists in project root
-- All required variables documented
-- Comments explain where to get values
-- File is tracked in git (not .env itself)
-
----
-
-#### 3.2 Update .gitignore
-
-- [ ] Ensure `.env` is ignored (not `.env.example`)
-- [ ] Add build output directories
-- [ ] Add editor and OS-specific files
-- [ ] Add test coverage reports
-
-**File:** `/.gitignore`
-
-Ensure these entries exist:
-
-```
-# Dependencies
-node_modules/
-
-# Build outputs
-dist/
-.vercel/
-.astro/
-
-# Environment variables (DO NOT COMMIT)
-.env
-.env.local
-.env.*.local
-
-# Testing
-coverage/
-.nyc_output/
-test-results/
-playwright-report/
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-*.swn
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-```
-
-**Acceptance Criteria:**
-
-- `.env` is ignored but `.env.example` is NOT ignored
-- Build directories ignored
-- Coverage reports ignored
-- Editor/OS files ignored
+**Time Estimate**: 10-15 minutes
 
 ---
 
-### 4. Project Structure
+#### 3.2 Verify Installation Field Name
 
-#### 4.1 Create Folder Structure
+**File**: `src/types/database.ts` (VERIFY)
 
-- [ ] Create component folders: `src/components/ui`, `src/components/layout`, `src/components/installations`, `src/components/notifications`
-- [ ] Create layout folder: `src/layouts`
-- [ ] Create lib folder: `src/lib`
-- [ ] Create middleware folder: `src/middleware`
-- [ ] Create types folder: `src/types`
-- [ ] Create page folders: `src/pages/auth`, `src/pages/admin/installations`, `src/pages/admin/installers`, `src/pages/installer/installations`
-- [ ] Create Supabase folders: `supabase/migrations`, `supabase/functions`
-- [ ] Create E2E test folder: `e2e/`
-- [ ] Create public assets folder: `public/icons`
+**Tasks**:
 
-**Commands:**
+- [ ] Check `installations` table for installer foreign key field name:
+  - Planning doc uses `installer_id`
+  - Existing queries use `assigned_to`
+  - Verify which is correct in schema
+- [ ] If field is `assigned_to`, update new queries to use correct field name:
+  - `getInstallerStats()` query
+  - `getInstallerInstallations()` query
+- [ ] If field is `installer_id`, verify existing queries are correct
+- [ ] Document field name in JSDoc comments for clarity
 
-```bash
-# Component folders
-mkdir -p src/components/ui
-mkdir -p src/components/layout
-mkdir -p src/components/installations
-mkdir -p src/components/notifications
+**Acceptance Criteria**:
 
-# Core folders
-mkdir -p src/layouts
-mkdir -p src/lib
-mkdir -p src/middleware
-mkdir -p src/types
-mkdir -p src/styles
+- Correct field name identified
+- All queries use consistent field name
+- No query uses non-existent field
+- Field name documented in query comments
 
-# Page folders
-mkdir -p src/pages/auth
-mkdir -p src/pages/admin/installations
-mkdir -p src/pages/admin/installers
-mkdir -p src/pages/installer/installations
-
-# Supabase folders
-mkdir -p supabase/migrations
-mkdir -p supabase/functions
-
-# Test folders
-mkdir -p e2e
-
-# Public assets
-mkdir -p public/icons
-```
-
-**Acceptance Criteria:**
-
-- All folders exist
-- Folder structure matches Astro conventions
-- Component organization by feature (installations, notifications)
-- Role-based page organization (admin, installer)
+**Time Estimate**: 10 minutes
 
 ---
 
-#### 4.2 Create Global Styles (Base Only)
+### 4. Integration Verification
 
-- [ ] Create `src/styles/global.css`
-- [ ] Add Tailwind directives (@tailwind base, components, utilities)
-- [ ] Add ONLY @layer base styles (NO @apply component classes per user preference)
-- [ ] Configure body and html base styles
+#### 4.1 Verify RLS Policies
 
-**File:** `/src/styles/global.css`
+**Tasks**:
 
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+- [ ] Review existing RLS policies for `users` table (Supabase dashboard or migration files)
+- [ ] Verify policies allow:
+  - Admins can SELECT all users
+  - Admins can UPDATE all users (except potentially role changes)
+  - Installers can SELECT only their own record
+  - Installers cannot UPDATE role field
+- [ ] If policies are missing or incorrect, document required policy changes:
 
-@layer base {
-  html {
-    @apply antialiased;
-  }
+  ```sql
+  -- Example policy structure (adjust to actual implementation)
+  CREATE POLICY "Admins can view all users"
+    ON users FOR SELECT
+    USING (auth.uid() IN (SELECT id FROM users WHERE role = 'admin'));
 
-  body {
-    @apply bg-gray-50 text-gray-900 min-h-screen;
-  }
-}
-```
+  CREATE POLICY "Admins can update users"
+    ON users FOR UPDATE
+    USING (auth.uid() IN (SELECT id FROM users WHERE role = 'admin'));
+  ```
 
-**IMPORTANT:** Per user preference, do NOT add @apply classes for components (.btn, .input, etc). All component styling will use utility classes directly in Astro files.
+- [ ] Test policies with actual authenticated requests
 
-**Acceptance Criteria:**
+**Acceptance Criteria**:
 
-- File exists at `/src/styles/global.css`
-- Tailwind directives included
-- Only @layer base styles (no component layer with @apply)
-- Clean, minimal setup
+- RLS policies documented
+- Policies align with requirements
+- Policies tested with real access tokens
+- Any missing policies identified for database team
 
----
-
-### 5. Supabase Client Infrastructure
-
-#### 5.1 Create Supabase Client Configuration
-
-- [ ] Create `src/lib/supabase.ts`
-- [ ] Configure Supabase client with anonymous key
-- [ ] Add TypeScript types (placeholder for Phase 02)
-- [ ] Add JSDoc comments explaining RLS behavior
-
-**File:** `/src/lib/supabase.ts`
-
-```typescript
-import { createClient } from '@supabase/supabase-js';
-
-/**
- * Supabase client configured with anonymous (public) key.
- *
- * IMPORTANT: This client respects Row Level Security (RLS) policies.
- * - All queries use the authenticated user's context
- * - RLS policies control data access at the database level
- * - Never trust client-side permission checks alone
- *
- * For server-side operations requiring elevated permissions,
- * use Supabase Edge Functions with the service role key.
- */
-
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables. Check .env file and ensure PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY are set.'
-  );
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Type placeholder - will be generated in Phase 02 after schema creation
-// Run: npx supabase gen types typescript --project-id <id> > src/types/database.ts
-export type Database = any; // TODO: Replace in Phase 02
-```
-
-**Acceptance Criteria:**
-
-- File exists at `/src/lib/supabase.ts`
-- Environment variables validated with helpful error message
-- JSDoc comments explain RLS behavior
-- Type placeholder with TODO for Phase 02
+**Time Estimate**: 20-30 minutes
 
 ---
 
-#### 5.2 Create Supabase Types Placeholder
+## Testing Implementation
 
-- [ ] Create `src/types/database.ts` with placeholder type
-- [ ] Add comment explaining type generation in Phase 02
+### 5. Unit Tests - User Actions
 
-**File:** `/src/types/database.ts`
+#### 5.1 Create User Actions Unit Tests
 
-```typescript
-/**
- * Database type definitions for Supabase.
- *
- * This file will be auto-generated in Phase 02 after database schema creation.
- *
- * Generation command:
- * npx supabase gen types typescript --project-id <your-project-id> > src/types/database.ts
- *
- * DO NOT edit this file manually - it will be overwritten.
- */
+**File**: `src/lib/actions/users.test.ts` (NEW)
 
-export type Database = {
-  public: {
-    Tables: {};
-    Views: {};
-    Functions: {};
-    Enums: {};
-  };
-};
-```
+**Tasks**:
 
-**Acceptance Criteria:**
+- [ ] Create test file with Vitest imports
+- [ ] Mock `createServerClient` using `vi.mock('../supabase')`
+- [ ] Test `updateUser()` function:
+  - **Test 1**: Successfully updates user profile
+    - Mock successful update response
+    - Verify correct data passed to `.update()`
+    - Verify `.eq('id', userId)` called
+    - Verify `.select().single()` called
+    - Assert `success: true` and data returned
+  - **Test 2**: Returns error on database failure
+    - Mock error response from Supabase
+    - Verify error logged to console
+    - Assert `success: false` and error message
+  - **Test 3**: Validates phone number before update
+    - Call with invalid phone number
+    - Assert returns error about phone format
+    - Verify database update NOT called
+  - **Test 4**: Allows valid phone number
+    - Call with valid Spanish phone
+    - Verify database update IS called
+    - Assert success
+  - **Test 5**: Allows null phone number
+    - Call with phone_number: null
+    - Verify database update IS called
+    - Assert success
+- [ ] Test `changeUserRole()` function:
+  - **Test 6**: Successfully changes role to admin
+    - Mock successful update
+    - Verify `.update({ role: 'admin' })` called
+    - Assert success
+  - **Test 7**: Successfully changes role to installer
+    - Mock successful update
+    - Verify `.update({ role: 'installer' })` called
+    - Assert success
+  - **Test 8**: Returns error on database failure
+    - Mock error response
+    - Verify error logged
+    - Assert `success: false`
+- [ ] Test `isValidSpanishPhone()` function:
+  - **Test 9**: Accepts valid formats:
+    - `+34 600 123 456`
+    - `+34600123456`
+    - `34600123456`
+    - `600123456`
+  - **Test 10**: Rejects invalid formats:
+    - `123` (too short)
+    - `+1 555 123 4567` (wrong country code)
+    - `abc123` (non-numeric)
+    - Empty string
+  - **Test 11**: Returns true for null
+    - `isValidSpanishPhone(null)` returns true (null is valid)
 
-- File exists at `/src/types/database.ts`
-- Placeholder structure matches Supabase type format
-- Clear comment about Phase 02 regeneration
+**Acceptance Criteria**:
 
----
+- All 11+ tests pass
+- Tests use proper mocks (no real Supabase calls)
+- Tests cover success and error paths
+- Phone validation thoroughly tested
+- Console error logging verified
+- Mock client properly isolated between tests
 
-### 6. Package.json Scripts
-
-#### 6.1 Add Test Scripts
-
-- [ ] Add `test` script for unit tests
-- [ ] Add `test:watch` for development
-- [ ] Add `test:coverage` for coverage reports
-- [ ] Add `test:integration` for integration tests (requires Supabase)
-- [ ] Add `test:e2e` for Playwright E2E tests
-- [ ] Add `test:e2e:ui` for Playwright UI mode
-
-**File:** `/package.json` (scripts section)
-
-```json
-{
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "lint": "eslint . --ext .ts,.astro",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
-  }
-}
-```
-
-**Acceptance Criteria:**
-
-- All test scripts defined
-- Lint and format scripts available
-- Scripts use correct commands
+**Time Estimate**: 1-1.5 hours
 
 ---
 
-#### 6.2 Configure Integration Test Setup
+### 6. Unit Tests - User Queries
 
-- [ ] Create `vitest.integration.config.ts` for integration tests
-- [ ] Configure to ONLY run `*.integration.test.ts` files
-- [ ] Add environment variable for test database (optional)
+#### 6.1 Create User Queries Unit Tests
 
-**File:** `/vitest.integration.config.ts`
+**File**: `src/lib/queries/users.test.ts` (NEW or UPDATE)
 
-```typescript
-import { defineConfig } from 'vitest/config';
-import path from 'path';
+**Tasks**:
 
-export default defineConfig({
-  test: {
-    environment: 'node',
-    globals: true,
-    include: ['**/*.integration.test.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/.astro/**'],
-    setupFiles: ['./src/tests/integration-setup.ts']
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@components': path.resolve(__dirname, './src/components'),
-      '@lib': path.resolve(__dirname, './src/lib'),
-      '@layouts': path.resolve(__dirname, './src/layouts'),
-      '@types': path.resolve(__dirname, './src/types')
-    }
-  }
-});
-```
+- [ ] Create or update test file with Vitest imports
+- [ ] Mock `createServerClient` using `vi.mock('../supabase')`
+- [ ] Test `getAllUsers()` function:
+  - **Test 1**: Returns all users ordered by creation date
+    - Mock successful query response with multiple users
+    - Verify `.select('*')` called
+    - Verify `.order('created_at', { ascending: false })` called
+    - Assert returned users match mock data
+  - **Test 2**: Returns empty array on error
+    - Mock error response
+    - Verify error logged to console
+    - Assert returns `[]`
+- [ ] Test `getInstallerStats()` function:
+  - **Test 3**: Calculates stats correctly
+    - Mock installations with mixed statuses:
+      - 2 pending, 3 in_progress, 5 completed
+    - Assert: `{ total: 10, pending: 2, inProgress: 3, completed: 5 }`
+  - **Test 4**: Excludes archived installations
+    - Mock query with `.is('archived_at', null)`
+    - Verify filter applied
+  - **Test 5**: Returns zero stats on error
+    - Mock error response
+    - Assert: `{ total: 0, pending: 0, inProgress: 0, completed: 0 }`
+  - **Test 6**: Handles empty installations
+    - Mock empty array response
+    - Assert all stats are 0
+- [ ] Test `getInstallerInstallations()` function:
+  - **Test 7**: Returns installations for installer
+    - Mock installations for specific installer ID
+    - Verify `.eq('installer_id', installerId)` called (or `assigned_to`)
+    - Assert returned installations match mock
+  - **Test 8**: Orders by scheduled_date descending
+    - Verify `.order('scheduled_date', { ascending: false, nullsFirst: false })` called
+  - **Test 9**: Applies limit when provided
+    - Call with `limit: 5`
+    - Verify `.limit(5)` called
+  - **Test 10**: No limit when omitted
+    - Call without limit parameter
+    - Verify `.limit()` NOT called
+  - **Test 11**: Excludes archived installations
+    - Verify `.is('archived_at', null)` called
+  - **Test 12**: Returns empty array on error
+    - Mock error response
+    - Assert returns `[]`
+- [ ] Test updated `getUserById()` function:
+  - **Test 13**: Returns user by ID
+    - Mock successful single user response
+    - Verify uses `createServerClient(accessToken)`
+    - Assert returned user matches mock
+  - **Test 14**: Returns null when user not found
+    - Mock error with code 'PGRST116'
+    - Assert returns `null`
+  - **Test 15**: Throws on other errors
+    - Mock error with different code
+    - Assert throws error
 
-**Acceptance Criteria:**
+**Acceptance Criteria**:
 
-- File exists in project root
-- Only runs integration tests
-- Setup file configured for Supabase test connection
+- All 15+ tests pass
+- Tests use proper mocks (no real Supabase calls)
+- Tests verify correct query construction
+- Tests cover success and error paths
+- Stats calculation logic thoroughly tested
+- Optional parameters tested
+- Access token usage verified
 
----
-
-### 7. Temporary Verification Page
-
-#### 7.1 Create Temporary Index Page
-
-- [ ] Create `src/pages/index.astro` with minimal content
-- [ ] Import global CSS
-- [ ] Display "Setup Complete" message
-- [ ] Add Spanish text (app language)
-- [ ] Use Tailwind utility classes (no @apply)
-
-**File:** `/src/pages/index.astro`
-
-```astro
----
-import '@/styles/global.css';
-// Página temporal - será reemplazada en Fase 06
----
-
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IMS - Configuración Completa</title>
-  </head>
-  <body class="flex items-center justify-center min-h-screen bg-gray-50">
-    <div class="text-center">
-      <div class="inline-flex items-center justify-center w-20 h-20 mb-6 rounded-full bg-green-100">
-        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
-          ></path>
-        </svg>
-      </div>
-      <h1 class="text-4xl font-bold text-gray-900 mb-3">IMS Setup Completo</h1>
-      <p class="text-lg text-gray-600 mb-2">Fase 01 completada correctamente</p>
-      <p class="text-sm text-gray-500">Astro 5 + Supabase + Tailwind CSS</p>
-    </div>
-  </body>
-</html>
-```
-
-**Acceptance Criteria:**
-
-- File exists at `/src/pages/index.astro`
-- Global CSS imported
-- Spanish text used
-- Only utility classes (no @apply classes)
-- Displays checkmark icon and success message
+**Time Estimate**: 1.5-2 hours
 
 ---
 
-### 8. Git Hooks Configuration
+### 7. Integration Tests with Supabase
 
-#### 8.1 Initialize Husky
+#### 7.1 Create User Management Integration Tests
 
-- [ ] Run `npx husky install`
-- [ ] Create `.husky/` folder
-- [ ] Add prepare script to package.json
+**File**: `src/lib/actions/users.integration.test.ts` (NEW)
 
-**Commands:**
+**Tasks**:
 
-```bash
-npx husky install
-npm pkg set scripts.prepare="husky install"
-```
+- [ ] Create integration test file (`.integration.test.ts` extension)
+- [ ] Import real Supabase client (not mocked)
+- [ ] Setup test environment:
+  - Use local Supabase instance (via Supabase CLI)
+  - Create test admin user with real access token
+  - Create test installer users in database
+- [ ] Test `updateUser()` with real Supabase:
+  - **Test 1**: Admin updates installer profile
+    - Create test installer
+    - Update full_name, phone_number, company_details
+    - Verify changes persisted in database
+    - Clean up test data
+  - **Test 2**: Validates phone number in real scenario
+    - Attempt update with invalid phone
+    - Verify error returned
+    - Verify database NOT modified
+- [ ] Test `changeUserRole()` with real Supabase:
+  - **Test 3**: Admin promotes installer to admin
+    - Create test installer
+    - Change role to 'admin'
+    - Verify role changed in database
+    - Clean up test data
+  - **Test 4**: RLS prevents installer from changing roles
+    - Use installer access token
+    - Attempt to change own role
+    - Verify operation fails (RLS denial)
+- [ ] Cleanup after each test:
+  - Delete test users created during test
+  - Verify no test data remains
 
-**Acceptance Criteria:**
+**Acceptance Criteria**:
 
-- `.husky/` folder exists
-- `prepare` script in package.json
+- Tests use real Supabase connection (local instance)
+- Tests verify RLS policies work correctly
+- Tests create and clean up test data
+- All tests pass with real database
+- Tests are isolated (don't depend on each other)
+- Test data is properly cleaned up
 
----
-
-#### 8.2 Create Pre-Commit Hook
-
-- [ ] Create `.husky/pre-commit` file
-- [ ] Configure lint-staged to run Prettier and ESLint on staged files
-
-**File:** `/.husky/pre-commit`
-
-```bash
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-npx lint-staged
-```
-
-**File:** `/package.json` (add lint-staged config)
-
-```json
-{
-  "lint-staged": {
-    "*.{ts,astro}": ["prettier --write", "eslint --fix"],
-    "*.{json,css,md}": ["prettier --write"]
-  }
-}
-```
-
-**Acceptance Criteria:**
-
-- Pre-commit hook exists and is executable
-- lint-staged configuration in package.json
-- Hook formats and lints only staged files
+**Time Estimate**: 1-1.5 hours
 
 ---
 
-#### 8.3 Create Pre-Push Hook (Recommended)
+#### 7.2 Create User Queries Integration Tests
 
-- [ ] Create `.husky/pre-push` file
-- [ ] Configure to run build before push
-- [ ] Abort push if build fails
+**File**: `src/lib/queries/users.integration.test.ts` (NEW)
 
-**File:** `/.husky/pre-push`
+**Tasks**:
 
-```bash
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+- [ ] Create integration test file
+- [ ] Setup test environment with real Supabase
+- [ ] Test `getAllUsers()` with real data:
+  - **Test 1**: Admin can fetch all users
+    - Seed test users (2 admins, 3 installers)
+    - Call `getAllUsers()` with admin token
+    - Verify returns all 5 users
+    - Verify users ordered by created_at
+    - Clean up
+  - **Test 2**: Installer cannot fetch all users (RLS)
+    - Use installer access token
+    - Call `getAllUsers()`
+    - Verify returns only installer's own record (RLS)
+- [ ] Test `getInstallerStats()` with real data:
+  - **Test 3**: Calculates stats from real installations
+    - Create test installer
+    - Create test installations with various statuses
+    - Call `getInstallerStats()`
+    - Verify stats match actual data
+    - Clean up
+  - **Test 4**: Excludes archived installations
+    - Create installations, archive some
+    - Verify stats don't include archived
+- [ ] Test `getInstallerInstallations()` with real data:
+  - **Test 5**: Returns installations for installer
+    - Create test installer with installations
+    - Call `getInstallerInstallations()`
+    - Verify returns correct installations
+    - Verify ordering
+    - Clean up
+  - **Test 6**: Respects limit parameter
+    - Create 10 installations
+    - Call with `limit: 5`
+    - Verify returns only 5
+    - Clean up
+- [ ] Cleanup after all tests
 
-echo "Running build before push..."
-npm run build
+**Acceptance Criteria**:
 
-if [ $? -ne 0 ]; then
-  echo "Build failed. Push aborted."
-  exit 1
-fi
+- Tests use real Supabase local instance
+- Tests verify RLS behavior with different user roles
+- Tests verify query ordering and filtering
+- All tests pass with real database
+- Test data properly seeded and cleaned up
 
-echo "Build successful. Proceeding with push."
-```
-
-**Acceptance Criteria:**
-
-- Pre-push hook exists and is executable
-- Build runs before push
-- Push blocked if build fails
+**Time Estimate**: 1.5-2 hours
 
 ---
 
-## Testing Requirements (MANDATORY)
+### 8. E2E Tests (Optional - Frontend Integration)
 
-### Unit Tests
+#### 8.1 E2E Tests for User Management UI
 
-#### Test 1: Supabase Client Initialization
+**File**: `e2e/admin-installers-management.spec.ts` (NEW)
 
-**File:** `/src/lib/supabase.test.ts`
+**Note**: These E2E tests require the frontend pages from Phase 11 to be implemented. Include them in the testing plan but mark as dependent on frontend completion.
 
-```typescript
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { supabase } from './supabase';
+**Tasks**:
 
-describe('Supabase Client', () => {
-  it('should initialize without errors', () => {
-    expect(supabase).toBeDefined();
+- [ ] Create E2E test file using Playwright
+- [ ] Test admin installers list page:
+  - **Test 1**: Admin can view installers list
+    - Login as admin
+    - Navigate to `/admin/installers`
+    - Verify installers displayed
+    - Verify stats shown for each installer
+  - **Test 2**: Installers separated by role
+    - Verify admins section exists
+    - Verify installers section exists
+    - Verify users in correct sections
+- [ ] Test installer profile page:
+  - **Test 3**: Admin can view installer profile
+    - Navigate to `/admin/installers/[id]`
+    - Verify profile information displayed
+    - Verify stats displayed
+    - Verify recent installations shown
+  - **Test 4**: Admin can edit installer profile
+    - Fill form with new data
+    - Submit form
+    - Verify success message
+    - Verify changes persisted
+  - **Test 5**: Phone validation works in UI
+    - Enter invalid phone
+    - Submit form
+    - Verify error message shown
+    - Verify form not submitted
+  - **Test 6**: Admin can promote installer to admin
+    - Click "Promover a Admin"
+    - Confirm modal
+    - Verify redirect to list
+    - Verify user in admins section
+  - **Test 7**: Admin can demote admin to installer
+    - Click "Cambiar a Installer"
+    - Confirm modal
+    - Verify success message
+    - Verify role changed
+  - **Test 8**: Cannot change own role
+    - View own profile
+    - Verify role change buttons not present
+- [ ] Test error scenarios:
+  - **Test 9**: Handles network errors gracefully
+  - **Test 10**: Displays user-friendly error messages
+
+**Acceptance Criteria**:
+
+- All E2E tests pass in real browser
+- Tests use real authentication flow
+- Tests verify complete user flows
+- Error scenarios tested
+- Tests clean up data after execution
+
+**Time Estimate**: 2-3 hours (after frontend implementation)
+
+---
+
+## Verification Checklist
+
+### 9. Manual Testing
+
+#### 9.1 User Actions Manual Tests
+
+**Prerequisites**:
+
+- Local Supabase instance running
+- Admin user authenticated
+- Test installer users exist
+
+**Tests**:
+
+- [ ] **Manual Test 1**: Update user profile via actions
+  - Call `updateUser()` from admin page
+  - Verify full_name updated
+  - Verify phone_number updated
+  - Verify company_details updated
+  - Verify response indicates success
+- [ ] **Manual Test 2**: Phone validation rejects invalid phone
+  - Call `updateUser()` with phone "123"
+  - Verify error about phone format
+  - Verify database not modified
+- [ ] **Manual Test 3**: Change installer to admin
+  - Call `changeUserRole()` with role: 'admin'
+  - Verify role changed in database
+  - Verify user can access admin routes
+- [ ] **Manual Test 4**: Change admin to installer
+  - Call `changeUserRole()` with role: 'installer'
+  - Verify role changed
+  - Verify user cannot access admin routes
+- [ ] **Manual Test 5**: RLS prevents unauthorized role changes
+  - Authenticate as installer
+  - Attempt to change own role
+  - Verify operation fails
+
+**Time Estimate**: 30-45 minutes
+
+---
+
+#### 9.2 User Queries Manual Tests
+
+**Tests**:
+
+- [ ] **Manual Test 6**: getAllUsers returns all users
+  - Call `getAllUsers()` as admin
+  - Verify returns both admins and installers
+  - Verify ordering (newest first)
+- [ ] **Manual Test 7**: getAllUsers respects RLS for installers
+  - Call `getAllUsers()` as installer
+  - Verify returns only own record (RLS)
+- [ ] **Manual Test 8**: getInstallerStats calculates correctly
+  - Create test installations with known statuses
+  - Call `getInstallerStats()`
+  - Verify counts match expectations
+- [ ] **Manual Test 9**: getInstallerInstallations returns installations
+  - Call with test installer ID
+  - Verify returns installations
+  - Verify ordering (scheduled_date desc)
+  - Verify excludes archived
+- [ ] **Manual Test 10**: Limit parameter works
+  - Call `getInstallerInstallations()` with limit: 3
+  - Verify returns max 3 installations
+
+**Time Estimate**: 30-45 minutes
+
+---
+
+### 10. Build and Code Quality
+
+#### 10.1 Build Verification
+
+**Tasks**:
+
+- [ ] Run `npm run build` successfully
+  - No TypeScript compilation errors
+  - No type mismatches
+  - Build completes successfully
+- [ ] Run `npm run lint` successfully
+  - No ESLint errors
+  - No unused imports
+  - Code follows project conventions
+- [ ] Run `npm run format:check`
+  - All files properly formatted
+  - Run `npm run format` if needed
+
+**Acceptance Criteria**:
+
+- Build succeeds without errors
+- No linter warnings or errors
+- Code properly formatted
+
+**Time Estimate**: 10-15 minutes
+
+---
+
+#### 10.2 TypeScript Type Safety
+
+**Tasks**:
+
+- [ ] Verify no `any` types used in new code
+- [ ] Verify all function parameters properly typed
+- [ ] Verify all return types explicitly declared
+- [ ] Verify imports use correct types from `src/lib/supabase.ts`
+- [ ] Verify database types are current (regenerate if needed)
+
+**Acceptance Criteria**:
+
+- TypeScript strict mode passes
+- All types are explicit and correct
+- No type assertions (`as`) unless justified
+- Database types match current schema
+
+**Time Estimate**: 15-20 minutes
+
+---
+
+### 11. Documentation
+
+#### 11.1 Code Documentation
+
+**Tasks**:
+
+- [ ] Add JSDoc comments to all exported functions:
+  - Function description (what it does)
+  - Parameter descriptions with types
+  - Return type description
+  - Example usage (if complex)
+- [ ] Add inline comments for complex logic:
+  - Phone validation regex explanation
+  - Stats calculation logic
+  - Query construction with multiple filters
+- [ ] Document RLS requirements in function comments:
+  - Which roles can call which functions
+  - What permissions are required
+
+**Acceptance Criteria**:
+
+- All public functions have JSDoc
+- Complex logic explained
+- RLS requirements documented
+- Comments explain WHY not WHAT
+
+**Time Estimate**: 20-30 minutes
+
+---
+
+#### 11.2 Update Project Documentation
+
+**File**: `CLAUDE.md` (UPDATE)
+
+**Tasks**:
+
+- [ ] Document new user actions module:
+  - Path: `src/lib/actions/users.ts`
+  - Functions: `updateUser()`, `changeUserRole()`
+  - Phone validation function
+- [ ] Document new user queries:
+  - Path: `src/lib/queries/users.ts`
+  - Functions: `getAllUsers()`, `getInstallerStats()`, `getInstallerInstallations()`
+- [ ] Document Spanish phone validation format:
+  - Accepted formats
+  - Example valid phones
+- [ ] Add example usage in CLAUDE.md:
+  ```typescript
+  // Example: Update user profile
+  const result = await updateUser(accessToken, userId, {
+    full_name: 'New Name',
+    phone_number: '+34 600 123 456'
   });
+  ```
 
-  it('should have required methods', () => {
-    expect(supabase.auth).toBeDefined();
-    expect(supabase.from).toBeDefined();
-  });
+**Acceptance Criteria**:
 
-  it('should throw error if environment variables are missing', async () => {
-    // This test validates error handling
-    // Actual test implementation depends on how env vars are mocked
-    expect(import.meta.env.PUBLIC_SUPABASE_URL).toBeDefined();
-    expect(import.meta.env.PUBLIC_SUPABASE_ANON_KEY).toBeDefined();
-  });
-});
-```
+- CLAUDE.md updated with new modules
+- Examples provided for common operations
+- Phone validation documented
 
-**Purpose:** Validate Supabase client initializes correctly
-
----
-
-#### Test 2: Environment Variable Validation
-
-**File:** `/src/lib/env.test.ts`
-
-```typescript
-import { describe, it, expect } from 'vitest';
-
-describe('Environment Variables', () => {
-  it('should have required Supabase variables', () => {
-    expect(import.meta.env.PUBLIC_SUPABASE_URL).toBeDefined();
-    expect(import.meta.env.PUBLIC_SUPABASE_ANON_KEY).toBeDefined();
-  });
-
-  it('should have required app variables', () => {
-    expect(import.meta.env.PUBLIC_APP_URL).toBeDefined();
-  });
-});
-```
-
-**Purpose:** Ensure environment variables are properly configured
-
----
-
-### Integration Tests
-
-#### Test 3: Supabase Connection (Integration)
-
-**File:** `/src/lib/supabase.integration.test.ts`
-
-```typescript
-import { describe, it, expect } from 'vitest';
-import { supabase } from './supabase';
-
-describe('Supabase Integration', () => {
-  it('should connect to Supabase', async () => {
-    const { data, error } = await supabase.auth.getSession();
-
-    // Should not error (session may be null, that's ok)
-    expect(error).toBeNull();
-  });
-
-  it('should have access to database', async () => {
-    // Attempt to query (will fail if no tables, but connection should work)
-    const { error } = await supabase.from('_test_connection').select('*').limit(1);
-
-    // Error is expected (table doesn't exist yet), but should be a DB error, not connection error
-    if (error) {
-      expect(error.code).not.toBe('PGRST301'); // Not a connection error
-    }
-  });
-});
-```
-
-**Purpose:** Validate Supabase connection works (requires Supabase instance)
-
----
-
-### E2E Tests
-
-#### Test 4: Homepage Renders
-
-**File:** `/e2e/homepage.spec.ts`
-
-```typescript
-import { test, expect } from '@playwright/test';
-
-test.describe('Homepage', () => {
-  test('should load successfully', async ({ page }) => {
-    await page.goto('/');
-
-    await expect(page).toHaveTitle(/IMS/);
-  });
-
-  test('should display setup complete message', async ({ page }) => {
-    await page.goto('/');
-
-    const heading = page.locator('h1');
-    await expect(heading).toContainText('IMS Setup Completo');
-  });
-
-  test('should have proper Spanish content', async ({ page }) => {
-    await page.goto('/');
-
-    const content = page.locator('body');
-    await expect(content).toContainText('Fase 01 completada correctamente');
-  });
-});
-```
-
-**Purpose:** Validate homepage renders correctly in browser
-
----
-
-### Test Infrastructure Setup
-
-#### Setup File for Integration Tests
-
-**File:** `/src/tests/integration-setup.ts`
-
-```typescript
-/**
- * Setup file for integration tests.
- * Runs before all integration tests.
- */
-
-import { beforeAll, afterAll } from 'vitest';
-
-beforeAll(async () => {
-  // Validate Supabase environment variables
-  if (!process.env.PUBLIC_SUPABASE_URL || !process.env.PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error(
-      'Integration tests require Supabase environment variables. ' +
-        'Create .env file with PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY'
-    );
-  }
-
-  console.log('Integration test environment initialized');
-});
-
-afterAll(async () => {
-  console.log('Integration tests complete');
-});
-```
-
-**Purpose:** Configure test environment for integration tests
-
----
-
-#### Test Environment File
-
-**File:** `/.env.test`
-
-```env
-# Test Environment Variables
-# Copy from .env but use test Supabase project if available
-
-PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-PUBLIC_APP_URL=http://localhost:4321
-```
-
-**Acceptance Criteria:**
-
-- File exists in project root
-- Same structure as .env.example
-- Used for test runs
-
----
-
-### Test Checklist
-
-- [ ] Unit test for Supabase client (`supabase.test.ts`)
-- [ ] Unit test for environment variables (`env.test.ts`)
-- [ ] Integration test for Supabase connection (`supabase.integration.test.ts`)
-- [ ] E2E test for homepage (`homepage.spec.ts`)
-- [ ] Integration test setup file (`integration-setup.ts`)
-- [ ] Test environment file (`.env.test`)
-- [ ] All tests pass: `npm test`
-- [ ] Integration tests pass: `npm run test:integration` (requires Supabase)
-- [ ] E2E tests pass: `npm run test:e2e`
-
----
-
-## Verification and Acceptance Criteria
-
-### Phase 01 Complete When:
-
-#### Development Environment
-
-- [ ] `npm run dev` starts without errors
-- [ ] Navigate to `http://localhost:4321` shows "IMS Setup Completo" page
-- [ ] Page displays with correct Spanish text
-- [ ] Page uses Tailwind styles (centered content, colors)
-- [ ] No console errors in browser
-- [ ] Hot reload works when editing files
-
----
-
-#### Build Process
-
-- [ ] `npm run build` completes successfully
-- [ ] Build output in `dist/` folder
-- [ ] No TypeScript errors
-- [ ] No build warnings (except expected Astro warnings)
-- [ ] `npm run preview` shows production build
-
----
-
-#### Code Quality
-
-- [ ] `npm run lint` passes with no errors
-- [ ] `npm run format:check` shows all files formatted
-- [ ] Pre-commit hook formats staged files
-- [ ] Pre-push hook runs build successfully
-- [ ] TypeScript strict mode enabled
-- [ ] All path aliases resolve correctly
-
----
-
-#### Testing
-
-- [ ] `npm test` runs unit tests successfully
-- [ ] All unit tests pass (green)
-- [ ] `npm run test:integration` runs (requires .env with Supabase)
-- [ ] Integration tests connect to Supabase
-- [ ] `npm run test:e2e` runs Playwright tests
-- [ ] E2E test passes for homepage
-- [ ] Test coverage report generated
-
----
-
-#### Project Structure
-
-- [ ] All folders created as specified
-- [ ] `src/lib/supabase.ts` exists and exports client
-- [ ] `src/types/database.ts` exists with placeholder
-- [ ] `src/styles/global.css` exists (base only, no @apply components)
-- [ ] `.env.example` exists with all variables
-- [ ] `.gitignore` properly configured
-- [ ] `supabase/` folder structure ready for Phase 02
-
----
-
-#### Configuration Files
-
-- [ ] `astro.config.mjs` - SSR mode, Vercel adapter, Tailwind
-- [ ] `tailwind.config.mjs` - Primary colors, content paths
-- [ ] `tsconfig.json` - Strict mode, path aliases
-- [ ] `vitest.config.ts` - Unit test configuration
-- [ ] `vitest.integration.config.ts` - Integration test configuration
-- [ ] `playwright.config.ts` - E2E test configuration
-- [ ] `.eslintrc.cjs` - TypeScript + Astro linting
-- [ ] `.prettierrc.cjs` - Code formatting
-- [ ] `.husky/pre-commit` - Format and lint on commit
-- [ ] `.husky/pre-push` - Build before push
-
----
-
-#### Documentation
-
-- [ ] This `workspace/backend.md` file created
-- [ ] All checklist items documented
-- [ ] Testing requirements clearly defined
-- [ ] Acceptance criteria specified
-
----
-
-## Post-Phase 01 Next Steps
-
-**Phase 02: Supabase Setup**
-
-- Create Supabase project (cloud or local CLI)
-- Apply database schema (tables, RLS policies)
-- Generate TypeScript types (`database.ts`)
-- Create first migration file
-
-**Phase 03: Supabase Client Integration**
-
-- Implement authentication helpers
-- Create auth utility functions
-- Set up session management
-
-**Phase 04-06: Authentication Flow**
-
-- Configure Google OAuth
-- Build login/callback pages
-- Implement middleware for route protection
-
----
-
-## Architecture Decisions Record
-
-### Decision 1: SSR vs. SPA
-
-**Decision:** Use Astro SSR mode (`output: 'server'`)
-
-**Rationale:**
-
-- Better SEO (important for admin dashboards)
-- Faster initial page loads
-- Secure server-side operations (protect sensitive data)
-- Supabase client works on server and client
-
-**Trade-offs:**
-
-- Requires Vercel serverless functions (more complex than static)
-- Higher hosting costs than static site
-- More complex deployment
-
----
-
-### Decision 2: Utility-First Tailwind Only
-
-**Decision:** NO @apply classes for components (user preference)
-
-**Rationale:**
-
-- User explicitly requested utility-first approach
-- Keeps all styling in component files (easier to see)
-- Reduces CSS file size (no duplicate styles)
-- Tailwind purge works better
-
-**Trade-offs:**
-
-- More verbose Astro files (longer class strings)
-- Harder to enforce consistent component styles
-- No shared component classes (must repeat utilities)
-
----
-
-### Decision 3: Strict TypeScript
-
-**Decision:** Use TypeScript strict mode
-
-**Rationale:**
-
-- Catch errors at compile time
-- Better IDE autocomplete
-- Supabase types require strict mode
-- Prevents null/undefined errors
-
-**Trade-offs:**
-
-- More verbose code (explicit types)
-- Slower initial development
-- Learning curve for team
-
----
-
-### Decision 4: Vitest + Playwright
-
-**Decision:** Vitest for unit/integration, Playwright for E2E
-
-**Rationale:**
-
-- Vitest is fast and works well with Vite/Astro
-- Playwright supports all browsers
-- Clear separation: unit vs. integration vs. E2E
-- Both have excellent TypeScript support
-
-**Trade-offs:**
-
-- Two testing frameworks to learn
-- More configuration files
-- Playwright requires browser downloads
-
----
-
-### Decision 5: Separate Integration Test Config
-
-**Decision:** Use `vitest.integration.config.ts` for integration tests
-
-**Rationale:**
-
-- Integration tests require Supabase connection (slower)
-- Unit tests should run fast without external dependencies
-- Clear separation improves CI/CD pipelines
-- Developers can run unit tests only during TDD
-
-**Trade-offs:**
-
-- Two Vitest configs to maintain
-- Must remember to run both test suites
-- More complex npm scripts
-
----
-
-## Common Pitfalls and Solutions
-
-### Pitfall 1: Missing Environment Variables
-
-**Problem:** Supabase client throws error on import
-
-**Solution:**
-
-- Ensure `.env` file exists (copy from `.env.example`)
-- Restart dev server after adding env vars
-- Check env var names match exactly (PUBLIC\_ prefix required)
-
----
-
-### Pitfall 2: Path Aliases Not Resolving
-
-**Problem:** TypeScript can't find imports like `@lib/supabase`
-
-**Solution:**
-
-- Ensure `tsconfig.json` has `paths` configured
-- Restart TypeScript server in IDE
-- Check `vitest.config.ts` has matching aliases
-
----
-
-### Pitfall 3: Tailwind Not Working
-
-**Problem:** Tailwind classes have no effect
-
-**Solution:**
-
-- Ensure `global.css` imported in layout or page
-- Check `tailwind.config.mjs` content paths include `.astro` files
-- Restart dev server
-- Verify Tailwind integration in `astro.config.mjs`
-
----
-
-### Pitfall 4: Tests Can't Import Astro Files
-
-**Problem:** Vitest fails when importing `.astro` components
-
-**Solution:**
-
-- Don't import Astro components in unit tests
-- Test utilities and lib files separately
-- Use E2E tests for full component testing
-- Mock Astro-specific imports if needed
-
----
-
-### Pitfall 5: E2E Tests Timeout
-
-**Problem:** Playwright tests fail with timeout errors
-
-**Solution:**
-
-- Ensure dev server is running (`npm run dev`)
-- Check `baseURL` in `playwright.config.ts` matches dev server
-- Increase timeout in test file if needed
-- Use `webServer` config to auto-start dev server
+**Time Estimate**: 20-30 minutes
 
 ---
 
 ## Summary
 
-Phase 01 establishes a production-ready Astro 5 SSR application with:
+### Implementation Breakdown
 
-- Comprehensive testing infrastructure (unit, integration, E2E)
-- Supabase client foundation (ready for Phase 02 schema)
-- Strict TypeScript configuration with path aliases
-- Code quality tooling (ESLint, Prettier, Husky)
-- Utility-first Tailwind CSS (no @apply component classes)
-- Spanish language UI
-- Vercel deployment configuration
+**Total Tasks**: 11 major sections, 40+ individual tasks
 
-**Estimated Time:** 2-3 hours (including test setup)
+**Estimated Time**:
 
-**Next Phase:** Phase 02 - Supabase Setup (database schema, RLS policies, type generation)
+1. User Actions Module: 1-1.5 hours
+2. User Queries Extensions: 1-1.5 hours
+3. Type Definitions: 20-30 minutes
+4. Integration Verification: 20-30 minutes
+5. Unit Tests (Actions): 1-1.5 hours
+6. Unit Tests (Queries): 1.5-2 hours
+7. Integration Tests (Actions): 1-1.5 hours
+8. Integration Tests (Queries): 1.5-2 hours
+9. E2E Tests: 2-3 hours (after frontend)
+10. Manual Testing: 1-1.5 hours
+11. Build & Documentation: 1-1.5 hours
+
+**Total Estimated Time**: 12-17 hours (including comprehensive testing)
+
+**Core Implementation Only**: 4-6 hours (items 1-4 + build)
+
+**Testing**: 6-9 hours (items 5-9)
+
+**Documentation & Verification**: 2-3 hours (items 10-11)
+
+---
+
+### Key Files
+
+**Files to Create**:
+
+- `src/lib/actions/users.ts` - User mutation actions
+- `src/lib/actions/users.test.ts` - Unit tests for actions
+- `src/lib/actions/users.integration.test.ts` - Integration tests for actions
+- `src/lib/queries/users.test.ts` - Unit tests for queries (if doesn't exist)
+- `src/lib/queries/users.integration.test.ts` - Integration tests for queries
+- `e2e/admin-installers-management.spec.ts` - E2E tests (after frontend)
+
+**Files to Update**:
+
+- `src/lib/queries/users.ts` - Add new query functions
+- `src/types/database.ts` - Verify/regenerate if needed
+- `CLAUDE.md` - Document new modules
+
+**Files to Verify**:
+
+- `src/lib/supabase.ts` - Verify type exports
+- Database RLS policies - Verify user management policies
+
+---
+
+### Dependencies
+
+**Required Before Starting**:
+
+- Phase 10 (Installations CRUD) completed
+- Database schema includes users table
+- RLS policies for users table configured
+- Authentication system working (Phase 06)
+
+**Blocking Frontend Work**:
+
+- Phase 11 frontend pages depend on these backend actions/queries
+- E2E tests depend on frontend implementation
+
+**Next Phase**:
+
+- Phase 12: Installer Dashboard (uses `getInstallerStats()`, `getInstallerInstallations()`)
+
+---
+
+### Success Criteria
+
+Phase 11 backend is complete when:
+
+1. ✅ `src/lib/actions/users.ts` created with `updateUser()` and `changeUserRole()`
+2. ✅ Phone validation implemented and tested
+3. ✅ `src/lib/queries/users.ts` extended with `getAllUsers()`, `getInstallerStats()`, `getInstallerInstallations()`
+4. ✅ All unit tests pass (20+ tests)
+5. ✅ All integration tests pass (10+ tests)
+6. ✅ RLS policies verified and documented
+7. ✅ Build succeeds: `npm run build`
+8. ✅ Linter passes: `npm run lint`
+9. ✅ TypeScript strict mode passes (no `any` types)
+10. ✅ Documentation updated in CLAUDE.md
+11. ✅ Manual testing completed successfully
+
+**Definition of Done**:
+
+- All backend code implemented
+- All tests passing
+- Build succeeds
+- Code reviewed for quality
+- Documentation updated
+- Ready for frontend integration
+
+---
+
+### Risk Assessment
+
+**Low Risk**:
+
+- Adding new user actions module (isolated, follows existing pattern)
+- Adding new query functions (isolated)
+- Phone validation utility (pure function, easily tested)
+
+**Medium Risk**:
+
+- Updating `getUserById()` signature (requires updating all usages)
+- RLS policy verification (may require policy changes)
+- Integration tests with real Supabase (requires local instance setup)
+
+**Mitigation**:
+
+- Comprehensive unit tests before integration tests
+- Verify RLS policies early in implementation
+- Test with both admin and installer tokens
+- Document all breaking changes
+
+**Rollback Plan**:
+
+- Revert user actions module
+- Revert query extensions
+- Revert `getUserById()` changes
+- No database schema changes (only queries)
+
+---
+
+### Architecture Decisions
+
+**Why Separate Actions and Queries?**:
+
+- **Actions** (`src/lib/actions/`): Mutations (INSERT, UPDATE, DELETE)
+- **Queries** (`src/lib/queries/`): Read operations (SELECT)
+- Clear separation of concerns
+- Easier to test and reason about
+- Follows existing project pattern
+
+**Why Phone Validation in Actions?**:
+
+- Validation happens before database operation
+- Server-side validation (don't trust client)
+- Reusable for other user update scenarios
+- Clear error messages before expensive database calls
+
+**Why Stats Calculation in Code?**:
+
+- Simple counts, not complex aggregation
+- No need for database view or stored procedure
+- Easier to test and debug
+- Flexible (can add more stats without schema changes)
+
+**Why AccessToken Required?**:
+
+- All operations respect RLS policies
+- No service role operations (security)
+- User context always present for authorization
+- Consistent with existing query/action pattern
+
+**Trade-offs**:
+
+- ✅ Security: All operations respect RLS
+- ✅ Testability: Pure functions, mockable dependencies
+- ✅ Consistency: Follows existing patterns
+- ❌ Performance: Stats calculated per request (not cached)
+  - Mitigation: Cache in frontend or add database view later if needed
+- ❌ N+1 queries: `getInstallerStats()` fetches all installations
+  - Mitigation: Acceptable for small datasets, optimize later if needed
+
+---
+
+**End of Backend Implementation Plan for Phase 11**

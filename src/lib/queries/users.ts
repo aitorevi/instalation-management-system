@@ -1,5 +1,6 @@
 import { supabase, createServerClient } from '../supabase';
 import type { Tables } from '@types/database';
+import type { Installation } from '../supabase';
 
 export type User = Tables<'users'>;
 
@@ -68,8 +69,15 @@ export async function getInstallerStats(): Promise<InstallerStats[]> {
   return stats;
 }
 
-export async function getUserById(id: string): Promise<User | null> {
-  const { data, error } = await supabase.from('users').select('*').eq('id', id).single();
+/**
+ * Gets user by ID with RLS context
+ * @param accessToken - User's access token for RLS context
+ * @param id - User ID to fetch
+ * @returns User or null if not found
+ */
+export async function getUserById(accessToken: string, id: string): Promise<User | null> {
+  const client = createServerClient(accessToken);
+  const { data, error } = await client.from('users').select('*').eq('id', id).single();
 
   if (error) {
     if (error.code === 'PGRST116') {
@@ -99,4 +107,103 @@ export async function getUsersCount(): Promise<{ admins: number; installers: num
     admins: adminsResult.count || 0,
     installers: installersResult.count || 0
   };
+}
+
+/**
+ * Gets all users (admins and installers) ordered by creation date
+ * Requires admin access token - RLS will filter based on user role
+ * @param accessToken - Admin's access token
+ * @returns Array of all users (or only own user if not admin, per RLS)
+ */
+export async function getAllUsers(accessToken: string): Promise<User[]> {
+  const client = createServerClient(accessToken);
+
+  const { data, error } = await client
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export interface InstallerStatsResult {
+  total: number;
+  pending: number;
+  inProgress: number;
+  completed: number;
+}
+
+/**
+ * Gets installation statistics for a specific installer
+ * Calculates counts by status, excluding archived installations
+ * @param accessToken - User's access token
+ * @param installerId - Installer user ID
+ * @returns Stats object with counts by status
+ */
+export async function getSingleInstallerStats(
+  accessToken: string,
+  installerId: string
+): Promise<InstallerStatsResult> {
+  const client = createServerClient(accessToken);
+
+  const { data, error } = await client
+    .from('installations')
+    .select('status')
+    .eq('assigned_to', installerId)
+    .is('archived_at', null);
+
+  if (error) {
+    console.error('Error fetching installer stats:', error);
+    return { total: 0, pending: 0, inProgress: 0, completed: 0 };
+  }
+
+  const installations = data || [];
+
+  return {
+    total: installations.length,
+    pending: installations.filter((i) => i.status === 'pending').length,
+    inProgress: installations.filter((i) => i.status === 'in_progress').length,
+    completed: installations.filter((i) => i.status === 'completed').length
+  };
+}
+
+/**
+ * Gets installations assigned to a specific installer
+ * Excludes archived installations, ordered by scheduled date
+ * @param accessToken - User's access token
+ * @param installerId - Installer user ID
+ * @param limit - Optional limit on number of results
+ * @returns Array of installations assigned to the installer
+ */
+export async function getInstallerInstallations(
+  accessToken: string,
+  installerId: string,
+  limit?: number
+): Promise<Installation[]> {
+  const client = createServerClient(accessToken);
+
+  let query = client
+    .from('installations')
+    .select('*')
+    .eq('assigned_to', installerId)
+    .is('archived_at', null)
+    .order('scheduled_date', { ascending: false, nullsFirst: false });
+
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching installer installations:', error);
+    return [];
+  }
+
+  return data || [];
 }
