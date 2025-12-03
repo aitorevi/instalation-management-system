@@ -1009,6 +1009,329 @@ Este documento debe actualizarse:
 
 ---
 
+## Fase 12: Installer Dashboard
+
+### Estado General
+
+✅ **Completado**:
+
+- Dashboard principal con estadísticas (Hoy, Pendientes, En Progreso, Completadas)
+- Instalaciones de hoy (sin fecha, solo hora)
+- Próximas instalaciones (con fecha completa)
+- Lista completa con filtros por status
+- Agrupación inteligente por fechas
+- Componente InstallationCardCompact reutilizable
+- Queries específicas del installer con RLS
+- Unit tests backend
+- Página placeholder de detalle
+
+🚧 **Pendiente**: Features adicionales propuestos, E2E tests completos
+
+---
+
+### 1. Notificaciones y Alertas Visuales (Prioridad: MEDIA)
+
+**Contexto**: Durante la planificación de Fase 12, se identificó la necesidad de alertas visuales para instalaciones urgentes o que requieren atención especial. Se pospuso para implementar en fase posterior.
+
+**Archivo**: `src/pages/installer/index.astro`
+
+- [ ] **Agregar indicadores de urgencia**
+  - Instalaciones con hora próxima (< 1 hora) mostrar banner naranja
+  - Instalaciones con cobro pendiente mostrar badge verde destacado
+  - Instalaciones atrasadas (pasada su hora) mostrar banner rojo
+  - Tiempo estimado: 1 hora
+
+**Archivo**: `src/components/installations/InstallationCardCompact.astro`
+
+- [ ] **Agregar estilos de urgencia**
+  - Border color dinámico según urgencia (red-500, orange-500, yellow-500)
+  - Ícono de alerta en instalaciones urgentes
+  - Animación sutil de pulso en instalaciones < 30 min
+  - Tiempo estimado: 1.5 horas
+
+**Archivo**: `src/lib/queries/installer.ts`
+
+- [ ] **Agregar query para instalaciones urgentes**
+  - `getUrgentInstallations()` - Instalaciones próximas (< 2 horas)
+  - `getOverdueInstallations()` - Instalaciones pasadas sin completar
+  - Incluir en stats del dashboard
+  - Tiempo estimado: 1 hora
+
+**Archivo**: `src/pages/installer/index.astro`
+
+- [ ] **Agregar sección de alertas**
+  - Banner destacado arriba del dashboard si hay urgentes/atrasadas
+  - Lista compacta de instalaciones que requieren atención
+  - Botón "Ver detalles" para cada una
+  - Tiempo estimado: 1.5 horas
+
+**Tests**:
+
+- [ ] **Unit tests para lógica de urgencia**
+  - Test cálculo de tiempo restante
+  - Test clasificación de urgencia (urgent, warning, normal)
+  - Tiempo estimado: 1 hora
+
+**Tiempo total estimado**: 6 horas
+
+---
+
+### 2. Búsqueda Rápida de Instalaciones (Prioridad: MEDIA)
+
+**Contexto**: Se identificó la necesidad de búsqueda rápida por nombre de cliente o dirección para facilitar el acceso a instalaciones específicas. Se pospuso para fase posterior.
+
+**Archivo**: `src/pages/installer/installations/index.astro`
+
+- [ ] **Agregar barra de búsqueda**
+  - Input con ícono de búsqueda
+  - Placeholder "Buscar por cliente o dirección..."
+  - Submit button o búsqueda on-change (debounced)
+  - Tiempo estimado: 1 hora
+
+**Archivo**: `src/lib/queries/installer.ts`
+
+- [ ] **Agregar query de búsqueda**
+  - `searchMyInstallations(accessToken, userId, searchTerm)`
+  - Búsqueda en client_name, client_address, client_phone
+  - Case-insensitive con `ilike`
+  - Respetar RLS (solo instalaciones asignadas)
+  - Tiempo estimado: 1.5 horas
+
+**Archivo**: `src/components/ui/SearchInput.astro` (NUEVO)
+
+- [ ] **Crear componente reutilizable de búsqueda**
+  - Props: name, placeholder, value, autofocus
+  - Ícono de búsqueda SVG integrado
+  - Clear button (X) si hay valor
+  - Estilos consistentes con design system
+  - Tiempo estimado: 1 hora
+
+**Archivo**: `src/pages/installer/installations/index.astro`
+
+- [ ] **Integrar búsqueda con filtros existentes**
+  - Combo de búsqueda + status filter
+  - Query param `?q=...&status=...`
+  - Indicador de resultados encontrados
+  - Botón "Limpiar búsqueda" si hay término activo
+  - Tiempo estimado: 1.5 horas
+
+**Frontend Enhancement**:
+
+- [ ] **Agregar búsqueda en tiempo real (opcional)**
+  - Client-side JS con debounce (300ms)
+  - Evitar submit en cada keystroke
+  - Progressive enhancement (funciona sin JS)
+  - Tiempo estimado: 2 horas
+
+**Tests**:
+
+- [ ] **Unit tests para query de búsqueda**
+  - Test búsqueda por nombre (case insensitive)
+  - Test búsqueda por dirección
+  - Test búsqueda por teléfono
+  - Test búsqueda sin resultados
+  - Test RLS (no muestra instalaciones de otros)
+  - Tiempo estimado: 1.5 horas
+
+- [ ] **E2E tests para búsqueda**
+  - Test búsqueda exitosa muestra resultados
+  - Test búsqueda sin resultados muestra empty state
+  - Test combinación búsqueda + filtro status
+  - Test limpiar búsqueda restaura lista completa
+  - Tiempo estimado: 2 horas
+
+**Tiempo total estimado**: 10.5 horas
+
+---
+
+### 3. Tests E2E - Installer Dashboard (Prioridad: ALTA)
+
+**Contexto**: Los tests E2E se pospusieron para implementar después de la Fase 13 (update de instalaciones), permitiendo testear el flujo completo.
+
+**Archivo**: `e2e/installer-dashboard.spec.ts` (NUEVO)
+
+**Dashboard Stats Tests**:
+
+- [ ] **Test: Dashboard displays correct stats**
+  - Login como installer
+  - Verificar 4 tarjetas de stats visibles
+  - Verificar números correctos (basados en fixtures)
+  - Tiempo estimado: 1 hora
+
+- [ ] **Test: Stats update after creating installation**
+  - Login como admin
+  - Crear instalación asignada a installer
+  - Login como installer
+  - Verificar stats actualizadas
+  - Tiempo estimado: 1.5 horas
+
+**Today Installations Tests**:
+
+- [ ] **Test: Today installations section displays correctly**
+  - Crear instalación para hoy
+  - Login como installer
+  - Verificar sección "Instalaciones de Hoy"
+  - Verificar solo muestra hora (no fecha)
+  - Tiempo estimado: 1 hora
+
+- [ ] **Test: Empty state for today installations**
+  - Login como installer sin instalaciones hoy
+  - Verificar empty state visible
+  - Verificar mensaje correcto
+  - Tiempo estimado: 30 min
+
+**Upcoming Installations Tests**:
+
+- [ ] **Test: Upcoming installations display correctly**
+  - Crear 3 instalaciones futuras
+  - Verificar sección "Próximas Instalaciones"
+  - Verificar muestra fecha completa
+  - Verificar orden ascendente por fecha
+  - Tiempo estimado: 1 hora
+
+- [ ] **Test: "Ver todas" link navigates correctly**
+  - Click en "Ver todas"
+  - Verificar navegación a `/installer/installations`
+  - Tiempo estimado: 30 min
+
+**Tiempo total estimado**: 5.5 horas
+
+---
+
+**Archivo**: `e2e/installer-installations-list.spec.ts` (NUEVO)
+
+**List Display Tests**:
+
+- [ ] **Test: Installations list displays all installations**
+  - Crear 5 instalaciones para installer
+  - Navegar a `/installer/installations`
+  - Verificar 5 instalaciones visibles
+  - Tiempo estimado: 1 hora
+
+- [ ] **Test: Installations grouped by date**
+  - Crear instalaciones en 3 fechas diferentes
+  - Verificar agrupación correcta
+  - Verificar headers de fecha formateados
+  - Tiempo estimado: 1.5 horas
+
+- [ ] **Test: Empty state for no installations**
+  - Login como installer sin instalaciones
+  - Verificar empty state
+  - Tiempo estimado: 30 min
+
+**Filter Tests**:
+
+- [ ] **Test: Filter by status works**
+  - Crear instalaciones con diferentes status
+  - Seleccionar "En Progreso"
+  - Click Filtrar
+  - Verificar solo muestra ese status
+  - Tiempo estimado: 1 hora
+
+- [ ] **Test: Clear filter restores full list**
+  - Aplicar filtro
+  - Click "Limpiar"
+  - Verificar todas las instalaciones visibles
+  - Tiempo estimado: 30 min
+
+**Navigation Tests**:
+
+- [ ] **Test: Click on installation navigates to detail**
+  - Click en InstallationCardCompact
+  - Verificar navegación a `/installer/installations/[id]`
+  - Tiempo estimado: 30 min
+
+**Responsive Tests**:
+
+- [ ] **Test: List is usable on mobile**
+  - Viewport 375x667
+  - Verificar cards legibles
+  - Verificar filtros usables
+  - Tiempo estimado: 45 min
+
+**Tiempo total estimado**: 5.75 horas
+
+---
+
+**Archivo**: `e2e/installer-installation-detail.spec.ts` (NUEVO)
+
+**Placeholder Tests (Fase 12)**:
+
+- [ ] **Test: Detail page placeholder displays**
+  - Navegar a `/installer/installations/[valid-id]`
+  - Verificar placeholder visible
+  - Verificar mensaje "Detalle completo en Fase 13"
+  - Tiempo estimado: 30 min
+
+- [ ] **Test: Invalid installation redirects to list**
+  - Navegar a `/installer/installations/invalid-uuid`
+  - Verificar redirect a `/installer/installations`
+  - Tiempo estimado: 30 min
+
+- [ ] **Test: Cannot view other installer's installation**
+  - Crear instalación asignada a otro installer
+  - Intentar acceder como installer actual
+  - Verificar redirect o error 403
+  - Tiempo estimado: 45 min
+
+**Full Detail Tests (Fase 13)**:
+
+- [ ] **Test: Detail page displays installation info**
+  - Implementar en Fase 13
+  - Tiempo estimado: TBD
+
+- [ ] **Test: Update status works**
+  - Implementar en Fase 13
+  - Tiempo estimado: TBD
+
+**Tiempo total estimado**: 1.75 horas
+
+---
+
+**Archivo**: `e2e/installer-accessibility.spec.ts` (NUEVO)
+
+**Accessibility Tests**:
+
+- [ ] **Test: Dashboard passes axe-core scan**
+  - Login como installer
+  - Ejecutar `await checkA11y(page)`
+  - Verificar sin violaciones críticas
+  - Tiempo estimado: 45 min
+
+- [ ] **Test: Installations list passes axe-core scan**
+  - Navegar a lista
+  - Ejecutar scan
+  - Tiempo estimado: 30 min
+
+- [ ] **Test: Dashboard is keyboard navigable**
+  - Tab navigation completa
+  - Verificar focus indicators
+  - Enter activa links
+  - Tiempo estimado: 45 min
+
+- [ ] **Test: Stats cards have proper semantics**
+  - Verificar números tienen `aria-label` descriptivo
+  - Verificar contraste de colores
+  - Tiempo estimado: 30 min
+
+**Tiempo total estimado**: 2.5 horas
+
+---
+
+### Resumen Fase 12 - Tiempo Estimado
+
+| Categoría                 | Prioridad | Items  | Tiempo Estimado |
+| ------------------------- | --------- | ------ | --------------- |
+| Notificaciones y Alertas  | MEDIA     | 5      | 6 horas         |
+| Búsqueda Rápida           | MEDIA     | 7      | 10.5 horas      |
+| E2E Tests - Dashboard     | ALTA      | 6      | 5.5 horas       |
+| E2E Tests - List          | ALTA      | 7      | 5.75 horas      |
+| E2E Tests - Detail        | ALTA      | 3      | 1.75 horas      |
+| E2E Tests - Accessibility | ALTA      | 4      | 2.5 horas       |
+| **TOTAL**                 | -         | **32** | **32 horas**    |
+
+---
+
 ## ✅ Criterios de Aceptación
 
 La Fase 06 estará **100% completa** cuando:

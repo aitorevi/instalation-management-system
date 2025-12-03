@@ -1,0 +1,110 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import Button from '../../../components/ui/Button.astro';
+import StatusBadge from '../../../components/installations/StatusBadge.astro';
+import { getUser } from '../../../lib/page-utils';
+import { getMyInstallationById } from '../../../lib/queries/installer';
+
+const user = getUser(Astro);
+const accessToken = Astro.cookies.get('sb-access-token')?.value ?? '';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/installer/installations?error=invalid-id');
+}
+
+const installation = await getMyInstallationById(accessToken, user.id, id);
+
+if (!installation) {
+  return Astro.redirect('/installer/installations?error=not-found');
+}
+---
+
+<DashboardLayout title={installation.client_name} user={user}>
+  <nav class="mb-6">
+    <ol class="flex items-center space-x-2 text-sm">
+      <li>
+        <a href="/installer/installations" class="text-primary-600 hover:text-primary-700">
+          Instalaciones
+        </a>
+      </li>
+      <li class="text-gray-400">/</li>
+      <li class="text-gray-600">{installation.client_name}</li>
+    </ol>
+  </nav>
+
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">{installation.client_name}</h1>
+    <p class="text-gray-600 mt-1">{installation.installation_type}</p>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <div class="flex items-start gap-4">
+      <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h2 class="text-xl font-semibold text-gray-900 mb-2">Detalle Completo en Fase 13</h2>
+        <p class="text-gray-600 mb-4">
+          La funcionalidad completa para ver y actualizar detalles de instalaci�n estar� disponible
+          en la Fase 13.
+        </p>
+
+        <div class="space-y-3 mb-6">
+          <div>
+            <span class="text-sm font-medium text-gray-500">Cliente:</span>
+            <p class="text-gray-900">{installation.client_name}</p>
+          </div>
+
+          <div>
+            <span class="text-sm font-medium text-gray-500">Direcci�n:</span>
+            <p class="text-gray-900">{installation.address}</p>
+          </div>
+
+          <div>
+            <span class="text-sm font-medium text-gray-500">Estado:</span>
+            <div class="mt-1">
+              <StatusBadge status={installation.status} />
+            </div>
+          </div>
+
+          {
+            installation.scheduled_date && (
+              <div>
+                <span class="text-sm font-medium text-gray-500">Fecha programada:</span>
+                <p class="text-gray-900">
+                  {new Date(installation.scheduled_date).toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </p>
+              </div>
+            )
+          }
+
+          {
+            installation.client_phone && (
+              <div>
+                <span class="text-sm font-medium text-gray-500">Tel�fono:</span>
+                <p class="text-gray-900">{installation.client_phone}</p>
+              </div>
+            )
+          }
+        </div>
+
+        <Button variant="secondary" href="/installer/installations">
+          Volver a Instalaciones
+        </Button>
+      </div>
+    </div>
+  </div>
+</DashboardLayout>
