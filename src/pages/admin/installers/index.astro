@@ -1,0 +1,25 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import Button from '../../../components/ui/Button.astro';
+import Alert from '../../../components/ui/Alert.astro';
+import { getUser } from '../../../lib/page-utils';
+
+const user = getUser(Astro);
+---
+
+<DashboardLayout title="Instaladores" user={user}>
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Instaladores</h1>
+        <p class="text-gray-600 mt-1">Gestiona los instaladores del sistema</p>
+      </div>
+      <Button variant="primary" href="/admin/installers/new">Nuevo Instalador</Button>
+    </div>
+  </div>
+
+  <Alert variant="info" title="Funcionalidad en desarrollo">
+    Esta página se implementará en la Fase 11 con listado completo de instaladores y sus
+    estadísticas.
+  </Alert>
+</DashboardLayout>
