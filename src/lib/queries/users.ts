@@ -1,4 +1,4 @@
-import { supabase } from '../supabase';
+import { supabase, createServerClient } from '../supabase';
 import type { Tables } from '@types/database';
 
 export type User = Tables<'users'>;
@@ -11,8 +11,10 @@ export interface InstallerStats {
   completedInstallations: number;
 }
 
-export async function getInstallers(): Promise<User[]> {
-  const { data, error } = await supabase
+export async function getInstallers(accessToken?: string): Promise<User[]> {
+  const client = accessToken ? createServerClient(accessToken) : supabase;
+
+  const { data, error } = await client
     .from('users')
     .select('*')
     .eq('role', 'installer')

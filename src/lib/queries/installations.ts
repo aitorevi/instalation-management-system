@@ -1,4 +1,4 @@
-import { supabase } from '../supabase';
+import { supabase, createServerClient } from '../supabase';
 import type { Tables } from '@types/database';
 import type { InstallationFilters } from '@types/index';
 
@@ -86,12 +86,13 @@ export async function getUpcomingInstallations(
 }
 
 export async function getInstallations(
-  filters?: InstallationFilters
+  accessToken: string,
+  filters?: InstallationFilters & { includeArchived?: boolean }
 ): Promise<InstallationWithInstaller[]> {
-  let query = supabase
-    .from('installations')
-    .select(
-      `
+  const client = accessToken ? createServerClient(accessToken) : supabase;
+
+  let query = client.from('installations').select(
+    `
       *,
       installer:assigned_to (
         id,
@@ -99,8 +100,11 @@ export async function getInstallations(
         email
       )
     `
-    )
-    .is('archived_at', null);
+  );
+
+  if (!filters?.includeArchived) {
+    query = query.is('archived_at', null);
+  }
 
   if (filters?.status) {
     query = query.eq('status', filters.status);
@@ -135,8 +139,13 @@ export async function getInstallations(
   return (data || []) as InstallationWithInstaller[];
 }
 
-export async function getInstallationById(id: string): Promise<InstallationWithInstaller | null> {
-  const { data, error } = await supabase
+export async function getInstallationById(
+  accessToken: string,
+  id: string
+): Promise<InstallationWithInstaller | null> {
+  const client = accessToken ? createServerClient(accessToken) : supabase;
+
+  const { data, error } = await client
     .from('installations')
     .select(
       `
