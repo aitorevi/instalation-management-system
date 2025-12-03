@@ -1,0 +1,27 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Header from '../components/layout/Header.astro';
+import Sidebar from '../components/layout/Sidebar.astro';
+import type { User } from '../lib/supabase';
+
+interface Props {
+  title: string;
+  user: User;
+}
+
+const { title, user } = Astro.props;
+const currentPath = Astro.url.pathname;
+---
+
+<BaseLayout title={title}>
+  <div class="min-h-screen">
+    <Header user={user} />
+    <Sidebar user={user} currentPath={currentPath} />
+
+    <main class="lg:pl-64 pt-16">
+      <div class="px-4 sm:px-6 lg:px-8 py-8">
+        <slot />
+      </div>
+    </main>
+  </div>
+</BaseLayout>

@@ -1,19 +1,79 @@
 ---
-// Placeholder - será reemplazado en Fase 12
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { getUser } from '../../lib/page-utils';
+
+const user = getUser(Astro);
 ---
 
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Installer Dashboard | IMS</title>
-  </head>
-  <body class="flex items-center justify-center min-h-screen bg-gray-50">
-    <div class="text-center">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">👷 Installer Dashboard</h1>
-      <p class="text-gray-600 mb-4">Placeholder - Fase 12</p>
-      <a href="/auth/logout" class="text-primary-600 hover:underline">Cerrar Sesión</a>
+<DashboardLayout title="Dashboard" user={user}>
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Mis Instalaciones</h1>
+    <p class="text-gray-600 mt-1">Bienvenido, {user.full_name}</p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+          <svg
+            class="w-6 h-6 text-yellow-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Pendientes</p>
+          <p class="text-2xl font-semibold text-gray-900">--</p>
+        </div>
+      </div>
     </div>
-  </body>
-</html>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">En Progreso</p>
+          <p class="text-2xl font-semibold text-gray-900">--</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+          <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Completadas</p>
+          <p class="text-2xl font-semibold text-gray-900">--</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Instalaciones de Hoy</h2>
+    <p class="text-gray-500">El contenido se añadirá en la Fase 12</p>
+  </div>
+</DashboardLayout>

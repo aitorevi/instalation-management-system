@@ -1,0 +1,72 @@
+---
+interface Option {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+interface Props {
+  name: string;
+  label?: string;
+  options: Option[];
+  value?: string;
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+  error?: string;
+  class?: string;
+  [key: string]: any;
+}
+
+const {
+  name,
+  label,
+  options,
+  value,
+  placeholder = 'Seleccionar...',
+  required = false,
+  disabled = false,
+  error,
+  class: className = '',
+  ...rest
+} = Astro.props;
+
+const inputId = `select-${name}`;
+const hasError = !!error;
+---
+
+<div class={`space-y-1 ${className}`}>
+  {
+    label && (
+      <label for={inputId} class="block text-sm font-medium text-gray-700">
+        {label}
+        {required && <span class="text-red-500 ml-1">*</span>}
+      </label>
+    )
+  }
+
+  <select
+    id={inputId}
+    name={name}
+    required={required}
+    disabled={disabled}
+    class:list={[
+      'block w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none bg-no-repeat bg-right',
+      hasError && 'border-red-500 focus:ring-red-500 focus:border-red-500',
+      disabled && 'bg-gray-100 cursor-not-allowed'
+    ]}
+    style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%236B7280%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%222%22 d=%22M19 9l-7 7-7-7%22%3E%3C/path%3E%3C/svg%3E'); background-size: 1.5rem;"
+    {...rest}
+  >
+    <option value="" disabled selected={!value}>{placeholder}</option>
+    {
+      options.map((opt) => (
+        <option value={opt.value} selected={value === opt.value} disabled={opt.disabled}>
+          {opt.label}
+        </option>
+      ))
+    }
+  </select>
+
+  {error && <p class="text-sm text-red-600">{error}</p>}
+</div>
