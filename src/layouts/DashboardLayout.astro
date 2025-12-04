@@ -1,0 +1,70 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import type { User } from '../types/database';
+
+interface Props {
+  title: string;
+  user: User;
+}
+
+const { title, user } = Astro.props;
+const isAdmin = user.role === 'admin';
+---
+
+<BaseLayout title={title}>
+  <div class="min-h-screen">
+    <!-- Simple header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30">
+      <div class="px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <a href={isAdmin ? '/admin' : '/installer'} class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                ></path>
+              </svg>
+            </div>
+            <span class="font-semibold text-gray-900">IMS</span>
+          </a>
+
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 text-sm">
+              <span class="text-gray-600">{user.user_metadata?.full_name || user.email}</span>
+              <span
+                class={`px-2 py-0.5 rounded-full text-xs font-medium ${isAdmin ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}
+              >
+                {isAdmin ? 'Admin' : 'Installer'}
+              </span>
+            </div>
+
+            <a
+              href="/auth/logout"
+              class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              title="Cerrar sesión"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                ></path>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="pt-8">
+      <div class="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto">
+        <slot />
+      </div>
+    </main>
+  </div>
+</BaseLayout>
