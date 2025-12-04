@@ -1,0 +1,332 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import Button from '../../../components/ui/Button.astro';
+import Input from '../../../components/ui/Input.astro';
+import Textarea from '../../../components/ui/Textarea.astro';
+import Badge from '../../../components/ui/Badge.astro';
+import Alert from '../../../components/ui/Alert.astro';
+import Modal from '../../../components/ui/Modal.astro';
+import StatusBadge from '../../../components/installations/StatusBadge.astro';
+import { getUser } from '../../../lib/page-utils';
+import {
+  getUserById,
+  getSingleInstallerStats,
+  getInstallerInstallations
+} from '../../../lib/queries/users';
+import { updateUser, changeUserRole } from '../../../lib/actions/users';
+
+const user = getUser(Astro);
+const accessToken = Astro.cookies.get('sb-access-token')?.value || '';
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/admin/installers');
+}
+
+let installer = await getUserById(accessToken, id);
+
+if (!installer) {
+  return Astro.redirect('/admin/installers');
+}
+
+let error: string | null = null;
+let success: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const action = formData.get('_action');
+
+  if (action === 'make_admin') {
+    const result = await changeUserRole(accessToken, id, 'admin');
+    if (result.success) {
+      return Astro.redirect('/admin/installers');
+    } else {
+      error = result.error || 'Error al cambiar rol';
+    }
+  } else if (action === 'make_installer') {
+    const result = await changeUserRole(accessToken, id, 'installer');
+    if (result.success) {
+      installer = (await getUserById(accessToken, id))!;
+      success = 'Rol cambiado a Installer correctamente';
+    } else {
+      error = result.error || 'Error al cambiar rol';
+    }
+  } else {
+    const fullName = formData.get('full_name')?.toString().trim();
+    const phone = formData.get('phone_number')?.toString().trim();
+    const details = formData.get('company_details')?.toString().trim();
+
+    if (!fullName) {
+      error = 'El nombre completo es obligatorio';
+    } else {
+      const result = await updateUser(accessToken, id, {
+        full_name: fullName,
+        phone_number: phone || null,
+        company_details: details || null
+      });
+
+      if (result.success) {
+        installer = result.data!;
+        success = 'Perfil actualizado correctamente';
+      } else {
+        error = result.error || 'Error al actualizar perfil';
+      }
+    }
+  }
+}
+
+const stats = await getSingleInstallerStats(accessToken, id);
+const installations = await getInstallerInstallations(accessToken, id, 10);
+
+const isAdmin = installer.role === 'admin';
+const isSelf = installer.id === user.id;
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+}
+
+function formatDateTime(dateStr: string | null): string {
+  if (!dateStr) return 'Sin fecha';
+  return new Date(dateStr).toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function getInitial(name: string): string {
+  return name.charAt(0).toUpperCase();
+}
+---
+
+<DashboardLayout title={installer.full_name} user={user}>
+  <nav class="mb-6 text-sm text-gray-500">
+    <a href="/admin" class="hover:text-gray-700">Dashboard</a>
+    <span class="mx-2">/</span>
+    <a href="/admin/installers" class="hover:text-gray-700">Equipo</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900">{installer.full_name}</span>
+  </nav>
+
+  <div class="mb-6">
+    <div class="flex items-start gap-4 mb-4">
+      <div
+        class={`w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0 ${isAdmin ? 'bg-purple-100' : 'bg-blue-100'}`}
+      >
+        <span class={`text-2xl font-semibold ${isAdmin ? 'text-purple-600' : 'text-blue-600'}`}>
+          {getInitial(installer.full_name)}
+        </span>
+      </div>
+      <div class="flex-1">
+        <div class="flex items-center gap-2 mb-1">
+          <h1 class="text-2xl font-bold text-gray-900">{installer.full_name}</h1>
+          <Badge variant={isAdmin ? 'purple' : 'blue'} size="sm">
+            {isAdmin ? 'Admin' : 'Installer'}
+          </Badge>
+          {
+            isSelf && (
+              <Badge variant="gray" size="sm">
+                Tú
+              </Badge>
+            )
+          }
+        </div>
+        <p class="text-gray-500">{installer.email}</p>
+      </div>
+      {
+        !isSelf && (
+          <div>
+            {isAdmin ? (
+              <Button variant="secondary" onclick="openDemoteModal()">
+                Cambiar a Installer
+              </Button>
+            ) : (
+              <Button variant="secondary" onclick="openPromoteModal()">
+                Promover a Admin
+              </Button>
+            )}
+          </div>
+        )
+      }
+    </div>
+
+    {
+      error && (
+        <Alert variant="error" title="Error" dismissible>
+          {error}
+        </Alert>
+      )
+    }
+    {
+      success && (
+        <Alert variant="success" title="Éxito" dismissible>
+          {success}
+        </Alert>
+      )
+    }
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-6">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Información del Perfil</h2>
+
+        <form method="POST" class="space-y-4">
+          <Input name="full_name" label="Nombre Completo" value={installer.full_name} required />
+
+          <Input
+            name="phone_number"
+            label="Teléfono"
+            type="tel"
+            value={installer.phone_number}
+            placeholder="+34 600 000 000"
+            hint="Formato: +34 600 000 000"
+            pattern="^\+34\s?\d{3}\s?\d{3}\s?\d{3}$"
+            title="Formato: +34 600 000 000"
+          />
+
+          <Textarea
+            name="company_details"
+            label="Detalles de la Empresa"
+            value={installer.company_details}
+            placeholder="Información adicional..."
+            rows={3}
+          />
+
+          <div class="pt-4">
+            <Button type="submit">Guardar Cambios</Button>
+          </div>
+        </form>
+      </div>
+
+      {
+        !isAdmin && installations.length > 0 && (
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-semibold text-gray-900">Instalaciones Recientes</h2>
+              <a
+                href={`/admin/installations?installer=${installer.id}`}
+                class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+              >
+                Ver todas
+              </a>
+            </div>
+
+            <div class="space-y-3">
+              {installations.map((installation) => (
+                <a
+                  href={`/admin/installations/${installation.id}`}
+                  class="block p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-gray-900">{installation.client_name}</div>
+                      <div class="text-sm text-gray-500">
+                        {formatDateTime(installation.scheduled_date)}
+                      </div>
+                    </div>
+                    <StatusBadge status={installation.status} size="sm" />
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+      {
+        !isAdmin && installations.length === 0 && (
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Instalaciones Recientes</h2>
+            <p class="text-gray-500 text-sm">No hay instalaciones asignadas</p>
+          </div>
+        )
+      }
+    </div>
+
+    <div class="space-y-6">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h3 class="text-sm font-medium text-gray-500 mb-3">Información</h3>
+        <dl class="space-y-3">
+          <div>
+            <dt class="text-xs text-gray-400">Email</dt>
+            <dd class="text-sm text-gray-900">{installer.email}</dd>
+          </div>
+          {
+            installer.phone_number && (
+              <div>
+                <dt class="text-xs text-gray-400">Teléfono</dt>
+                <dd class="text-sm text-gray-900">{installer.phone_number}</dd>
+              </div>
+            )
+          }
+          <div>
+            <dt class="text-xs text-gray-400">Miembro desde</dt>
+            <dd class="text-sm text-gray-900">{formatDate(installer.created_at)}</dd>
+          </div>
+        </dl>
+      </div>
+
+      {
+        !isAdmin && (
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-sm font-medium text-gray-500 mb-3">Estadísticas</h3>
+            <dl class="space-y-3">
+              <div class="flex items-center justify-between">
+                <dt class="text-sm text-gray-600">Total asignadas</dt>
+                <dd class="text-sm font-semibold text-gray-900">{stats.total}</dd>
+              </div>
+              <div class="flex items-center justify-between">
+                <dt class="text-sm text-gray-600">Pendientes</dt>
+                <dd class="text-sm font-semibold text-yellow-600">{stats.pending}</dd>
+              </div>
+              <div class="flex items-center justify-between">
+                <dt class="text-sm text-gray-600">En progreso</dt>
+                <dd class="text-sm font-semibold text-blue-600">{stats.inProgress}</dd>
+              </div>
+              <div class="flex items-center justify-between">
+                <dt class="text-sm text-gray-600">Completadas</dt>
+                <dd class="text-sm font-semibold text-green-600">{stats.completed}</dd>
+              </div>
+            </dl>
+          </div>
+        )
+      }
+    </div>
+  </div>
+
+  <Modal id="promote" title="Promover a Administrador">
+    <p class="text-gray-700">
+      ¿Estás seguro de que quieres promover a <strong>{installer.full_name}</strong> a Administrador?
+      Tendrá acceso completo al sistema.
+    </p>
+
+    <Fragment slot="footer">
+      <Button variant="secondary" onclick="closePromoteModal()">Cancelar</Button>
+      <form method="POST" style="display: inline;">
+        <input type="hidden" name="_action" value="make_admin" />
+        <Button type="submit">Promover</Button>
+      </form>
+    </Fragment>
+  </Modal>
+
+  <Modal id="demote" title="Cambiar a Installer">
+    <p class="text-gray-700">
+      ¿Estás seguro de que quieres cambiar a <strong>{installer.full_name}</strong> a Installer? Perderá
+      acceso de administrador.
+    </p>
+
+    <Fragment slot="footer">
+      <Button variant="secondary" onclick="closeDemoteModal()">Cancelar</Button>
+      <form method="POST" style="display: inline;">
+        <input type="hidden" name="_action" value="make_installer" />
+        <Button type="submit" variant="danger">Cambiar Rol</Button>
+      </form>
+    </Fragment>
+  </Modal>
+</DashboardLayout>

@@ -1,0 +1,211 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import InstallationForm from '../../../components/installations/InstallationForm.astro';
+import Button from '../../../components/ui/Button.astro';
+import Alert from '../../../components/ui/Alert.astro';
+import Modal from '../../../components/ui/Modal.astro';
+import StatusBadge from '../../../components/installations/StatusBadge.astro';
+import Badge from '../../../components/ui/Badge.astro';
+import { getUser } from '../../../lib/page-utils';
+import { getInstallationById } from '../../../lib/queries/installations';
+import { getInstallers } from '../../../lib/queries/users';
+import {
+  updateInstallation,
+  archiveInstallation,
+  restoreInstallation
+} from '../../../lib/actions/installations';
+
+const user = getUser(Astro);
+const accessToken = Astro.cookies.get('sb-access-token')?.value || '';
+const { id } = Astro.params;
+
+let installation = await getInstallationById(accessToken, id!);
+
+if (!installation) {
+  return Astro.redirect('/admin/installations');
+}
+
+const installers = await getInstallers(accessToken);
+
+let error: string | null = null;
+let success: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const action = formData.get('_action');
+
+  if (action === 'archive') {
+    const result = await archiveInstallation(accessToken, id!);
+    if (result.success) {
+      return Astro.redirect('/admin/installations');
+    } else {
+      error = result.error || 'Error al archivar';
+    }
+  } else if (action === 'restore') {
+    const result = await restoreInstallation(accessToken, id!);
+    if (result.success) {
+      installation = await getInstallationById(accessToken, id!);
+      success = 'Instalación restaurada correctamente';
+    } else {
+      error = result.error || 'Error al restaurar';
+    }
+  } else {
+    const scheduled_date = formData.get('scheduled_date') as string;
+
+    const data = {
+      client_name: formData.get('client_name') as string,
+      client_phone: formData.get('client_phone') as string,
+      client_email: formData.get('client_email') as string,
+      address: formData.get('address') as string,
+      installation_type: formData.get('installation_type') as string,
+      scheduled_date: scheduled_date ? new Date(scheduled_date).toISOString() : null,
+      assigned_to: (formData.get('assigned_to') as string) || null,
+      status: formData.get('status') as any,
+      notes: (formData.get('notes') as string) || null
+    };
+
+    const result = await updateInstallation(accessToken, id!, data);
+
+    if (result.success) {
+      installation = await getInstallationById(accessToken, id!);
+      success = 'Instalación actualizada correctamente';
+    } else {
+      error = result.error || 'Error al actualizar';
+    }
+  }
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+---
+
+<DashboardLayout title="Instalación" user={user}>
+  <nav class="mb-6">
+    <ol class="flex items-center gap-2 text-sm text-gray-500">
+      <li><a href="/admin" class="hover:text-gray-700">Dashboard</a></li>
+      <li>/</li>
+      <li><a href="/admin/installations" class="hover:text-gray-700">Instalaciones</a></li>
+      <li>/</li>
+      <li class="text-gray-900">{installation!.client_name}</li>
+    </ol>
+  </nav>
+
+  <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-gray-900">{installation!.client_name}</h1>
+        <StatusBadge status={installation!.status} />
+        {installation!.archived_at && <Badge variant="gray">Archivada</Badge>}
+      </div>
+      <p class="text-gray-500 mt-1">{installation!.address}</p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      {
+        installation!.archived_at ? (
+          <form method="POST">
+            <input type="hidden" name="_action" value="restore" />
+            <Button type="submit" variant="secondary">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              Restaurar
+            </Button>
+          </form>
+        ) : (
+          <Button variant="danger" onclick="openArchiveModal()">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+              />
+            </svg>
+            Archivar
+          </Button>
+        )
+      }
+    </div>
+  </div>
+
+  {
+    error && (
+      <Alert variant="error" title="Error" class="mb-6" dismissible>
+        {error}
+      </Alert>
+    )
+  }
+
+  {
+    success && (
+      <Alert variant="success" title="Éxito" class="mb-6" dismissible>
+        {success}
+      </Alert>
+    )
+  }
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <p class="text-sm text-gray-500">Creada</p>
+      <p class="font-medium">{formatDate(installation!.created_at)}</p>
+    </div>
+
+    {
+      installation!.completed_at && (
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <p class="text-sm text-gray-500">Completada</p>
+          <p class="font-medium">{formatDate(installation!.completed_at)}</p>
+        </div>
+      )
+    }
+
+    {
+      installation!.installer && (
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <p class="text-sm text-gray-500">Instalador asignado</p>
+          <p class="font-medium">{installation!.installer.full_name}</p>
+        </div>
+      )
+    }
+  </div>
+
+  {
+    !installation!.archived_at && (
+      <InstallationForm
+        installation={installation}
+        installers={installers}
+        action={`/admin/installations/${id}`}
+        submitLabel="Guardar Cambios"
+      />
+    )
+  }
+
+  <Modal id="archive" title="Archivar Instalación">
+    <p class="text-gray-600">
+      ¿Estás seguro de que quieres archivar esta instalación? Podrás restaurarla más tarde si es
+      necesario.
+    </p>
+
+    <Fragment slot="footer">
+      <Button variant="secondary" onclick="closeArchiveModal()">Cancelar</Button>
+      <form method="POST" class="inline">
+        <input type="hidden" name="_action" value="archive" />
+        <Button type="submit" variant="danger">Archivar</Button>
+      </form>
+    </Fragment>
+  </Modal>
+</DashboardLayout>

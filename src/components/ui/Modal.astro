@@ -1,0 +1,90 @@
+---
+interface Props {
+  id: string;
+  title: string;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const { id, title, size = 'md' } = Astro.props;
+
+const sizeClasses = {
+  sm: 'max-w-sm',
+  md: 'max-w-lg',
+  lg: 'max-w-2xl'
+};
+---
+
+<div
+  id={`${id}-backdrop`}
+  class="fixed inset-0 z-50 bg-black/50 hidden items-center justify-center p-4"
+  data-modal-backdrop={id}
+>
+  <div
+    class={`bg-white rounded-xl shadow-xl w-full ${sizeClasses[size]} transform transition-all`}
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby={`${id}-title`}
+  >
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <h2 id={`${id}-title`} class="text-lg font-semibold text-gray-900">
+        {title}
+      </h2>
+      <button
+        type="button"
+        class="p-2 -mr-2 text-gray-400 hover:text-gray-500 rounded-lg hover:bg-gray-100"
+        data-modal-close={id}
+        aria-label="Cerrar"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="px-6 py-4">
+      <slot />
+    </div>
+
+    <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+      <slot name="footer" />
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ id }}>
+  const backdrop = document.getElementById(`${id}-backdrop`);
+
+  window[`open${id.charAt(0).toUpperCase() + id.slice(1)}Modal`] = function () {
+    backdrop?.classList.remove('hidden');
+    backdrop?.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  };
+
+  window[`close${id.charAt(0).toUpperCase() + id.slice(1)}Modal`] = function () {
+    backdrop?.classList.add('hidden');
+    backdrop?.classList.remove('flex');
+    document.body.style.overflow = '';
+  };
+
+  backdrop?.addEventListener('click', (e) => {
+    if (e.target === backdrop) {
+      window[`close${id.charAt(0).toUpperCase() + id.slice(1)}Modal`]();
+    }
+  });
+
+  document.querySelectorAll(`[data-modal-close="${id}"]`).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      window[`close${id.charAt(0).toUpperCase() + id.slice(1)}Modal`]();
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !backdrop?.classList.contains('hidden')) {
+      window[`close${id.charAt(0).toUpperCase() + id.slice(1)}Modal`]();
+    }
+  });
+</script>

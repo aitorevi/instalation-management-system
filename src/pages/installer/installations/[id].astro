@@ -1,456 +1,110 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 import Button from '../../../components/ui/Button.astro';
-import Textarea from '../../../components/ui/Textarea.astro';
-import Alert from '../../../components/ui/Alert.astro';
 import StatusBadge from '../../../components/installations/StatusBadge.astro';
-import MaterialsList from '../../../components/installations/MaterialsList.astro';
 import { getUser } from '../../../lib/page-utils';
 import { getMyInstallationById } from '../../../lib/queries/installer';
-import { getMaterialsByInstallation } from '../../../lib/queries/materials';
-import {
-  updateInstallationStatus,
-  updateInstallationNotes,
-  addMaterial,
-  deleteMaterial
-} from '../../../lib/actions/installer';
-import type { Database } from '@types/database';
-
-type InstallationStatus = Database['public']['Enums']['installation_status'];
 
 const user = getUser(Astro);
 const accessToken = Astro.cookies.get('sb-access-token')?.value ?? '';
+
 const { id } = Astro.params;
 
 if (!id) {
-  return Astro.redirect('/installer/installations');
+  return Astro.redirect('/installer/installations?error=invalid-id');
 }
 
-let installation = await getMyInstallationById(accessToken, user.id, id);
+const installation = await getMyInstallationById(accessToken, user.id, id);
 
 if (!installation) {
-  return Astro.redirect('/installer/installations');
+  return Astro.redirect('/installer/installations?error=not-found');
 }
-
-let materials = await getMaterialsByInstallation(accessToken, id);
-
-let error: string | null = null;
-let success: string | null = null;
-
-if (Astro.request.method === 'POST') {
-  const formData = await Astro.request.formData();
-  const action = formData.get('_action');
-
-  if (action === 'update_status') {
-    const status = formData.get('status') as InstallationStatus;
-    const result = await updateInstallationStatus(accessToken, id, user.id, status);
-
-    if (result.success) {
-      installation = await getMyInstallationById(accessToken, user.id, id);
-      success = 'Estado actualizado correctamente';
-    } else {
-      error = result.error || 'Error al actualizar estado';
-    }
-  } else if (action === 'update_notes') {
-    const notes = formData.get('notes') as string;
-    const result = await updateInstallationNotes(accessToken, id, user.id, notes);
-
-    if (result.success) {
-      installation = await getMyInstallationById(accessToken, user.id, id);
-      success = 'Notas guardadas correctamente';
-    } else {
-      error = result.error || 'Error al guardar notas';
-    }
-  } else if (action === 'add_material') {
-    const description = formData.get('description') as string;
-    const result = await addMaterial(accessToken, id, user.id, description);
-
-    if (result.success) {
-      materials = await getMaterialsByInstallation(accessToken, id);
-      success = 'Material añadido correctamente';
-    } else {
-      error = result.error || 'Error al añadir material';
-    }
-  } else if (action === 'delete_material') {
-    const materialId = formData.get('material_id') as string;
-    const result = await deleteMaterial(accessToken, materialId, user.id);
-
-    if (result.success) {
-      materials = await getMaterialsByInstallation(accessToken, id);
-      success = 'Material eliminado correctamente';
-    } else {
-      error = result.error || 'Error al eliminar material';
-    }
-  }
-}
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return 'Sin fecha';
-  return new Date(dateStr).toLocaleDateString('es-ES', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
-}
-
-function formatTime(dateStr: string | null): string {
-  if (!dateStr) return '';
-  return new Date(dateStr).toLocaleTimeString('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
-
-function formatCurrency(amount: number | null): string {
-  if (!amount) return '-';
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR'
-  }).format(amount);
-}
-
-const allowedStatuses: { value: InstallationStatus; label: string }[] = [
-  { value: 'pending', label: 'Pendiente' },
-  { value: 'in_progress', label: 'En Progreso' },
-  { value: 'completed', label: 'Completada' }
-];
-
-const isCancelled = installation.status === 'cancelled';
-const isPending = installation.status === 'pending';
-const isInProgress = installation.status === 'in_progress';
 ---
 
 <DashboardLayout title={installation.client_name} user={user}>
-  <nav class="mb-6" aria-label="Breadcrumb">
-    <ol class="flex items-center gap-2 text-sm text-gray-500">
-      <li><a href="/installer" class="hover:text-gray-700">Dashboard</a></li>
-      <li>/</li>
-      <li><a href="/installer/installations" class="hover:text-gray-700">Instalaciones</a></li>
-      <li>/</li>
-      <li class="text-gray-900">{installation.client_name}</li>
+  <nav class="mb-6">
+    <ol class="flex items-center space-x-2 text-sm">
+      <li>
+        <a href="/installer/installations" class="text-primary-600 hover:text-primary-700">
+          Instalaciones
+        </a>
+      </li>
+      <li class="text-gray-400">/</li>
+      <li class="text-gray-600">{installation.client_name}</li>
     </ol>
   </nav>
 
-  {
-    error && (
-      <Alert variant="error" title="Error" class="mb-6" dismissible>
-        {error}
-      </Alert>
-    )
-  }
-
-  {
-    success && (
-      <Alert variant="success" class="mb-6" dismissible>
-        {success}
-      </Alert>
-    )
-  }
-
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="lg:col-span-2 space-y-6">
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <div class="flex items-center gap-3">
-              <h1 class="text-xl font-bold text-gray-900">{installation.client_name}</h1>
-              <StatusBadge status={installation.status} />
-            </div>
-            <p class="text-gray-500 mt-1">{installation.client_address}</p>
-          </div>
-
-          {
-            !isCancelled && (
-              <div class="flex gap-2">
-                {isPending && (
-                  <form method="POST">
-                    <input type="hidden" name="_action" value="update_status" />
-                    <input type="hidden" name="status" value="in_progress" />
-                    <Button type="submit" size="sm">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                        />
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      Iniciar
-                    </Button>
-                  </form>
-                )}
-
-                {isInProgress && (
-                  <button
-                    type="button"
-                    onclick="document.getElementById('confirm-modal').classList.remove('hidden')"
-                    class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    Completar
-                  </button>
-                )}
-              </div>
-            )
-          }
-        </div>
-
-        {
-          !isCancelled && (
-            <div class="mt-6 pt-6 border-t border-gray-200">
-              <form method="POST" class="flex flex-wrap items-end gap-4">
-                <input type="hidden" name="_action" value="update_status" />
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Cambiar estado</label>
-                  <select
-                    name="status"
-                    class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  >
-                    {allowedStatuses.map((s) => (
-                      <option value={s.value} selected={installation.status === s.value}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <Button type="submit" variant="secondary" size="sm">
-                  Actualizar
-                </Button>
-              </form>
-            </div>
-          )
-        }
-
-        {
-          isCancelled && (
-            <div class="mt-6 pt-6 border-t border-gray-200">
-              <p class="text-sm text-red-600">
-                Esta instalación ha sido cancelada por el administrador.
-              </p>
-            </div>
-          )
-        }
-      </div>
-
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Notas</h2>
-
-        <form method="POST">
-          <input type="hidden" name="_action" value="update_notes" />
-          <Textarea
-            name="notes"
-            value={installation.notes}
-            placeholder="Añade notas sobre la instalación..."
-            rows={4}
-            disabled={isCancelled}
-          />
-          {
-            !isCancelled && (
-              <div class="mt-4">
-                <Button type="submit" variant="secondary">
-                  Guardar Notas
-                </Button>
-              </div>
-            )
-          }
-        </form>
-      </div>
-
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Materiales Utilizados</h2>
-        <MaterialsList materials={materials} installationId={id} editable={!isCancelled} />
-      </div>
-    </div>
-
-    <div class="space-y-6">
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 class="text-sm font-medium text-gray-500 mb-3">Programación</h3>
-
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-            <svg
-              class="w-6 h-6 text-primary-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              ></path>
-            </svg>
-          </div>
-          <div>
-            <p class="font-medium text-gray-900 capitalize">
-              {formatDate(installation.scheduled_date)}
-            </p>
-            <p class="text-sm text-gray-500">{formatTime(installation.scheduled_date)}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 class="text-sm font-medium text-gray-500 mb-3">Contacto</h3>
-
-        <div class="space-y-3">
-          {
-            installation.client_phone && (
-              <a
-                href={`tel:${installation.client_phone}`}
-                class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-              >
-                <svg
-                  class="w-5 h-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                  />
-                </svg>
-                <span class="text-gray-900">{installation.client_phone}</span>
-              </a>
-            )
-          }
-
-          {
-            installation.client_email && (
-              <a
-                href={`mailto:${installation.client_email}`}
-                class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-              >
-                <svg
-                  class="w-5 h-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-                <span class="text-gray-900 truncate">{installation.client_email}</span>
-              </a>
-            )
-          }
-
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(installation.client_address)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-          >
-            <svg
-              class="w-5 h-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              ></path>
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-            <span class="text-gray-900">Ver en mapa</span>
-            <svg
-              class="w-4 h-4 text-gray-400 ml-auto"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-              ></path>
-            </svg>
-          </a>
-        </div>
-      </div>
-
-      {
-        installation.collect_payment && (
-          <div class="bg-green-50 rounded-lg shadow-sm border border-green-200 p-6">
-            <h3 class="text-sm font-medium text-green-800 mb-2">Cobro Requerido</h3>
-            <p class="text-2xl font-bold text-green-700">
-              {formatCurrency(installation.amount_to_collect)}
-            </p>
-          </div>
-        )
-      }
-    </div>
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">{installation.client_name}</h1>
+    <p class="text-gray-600 mt-1">{installation.installation_type}</p>
   </div>
 
-  <div
-    id="confirm-modal"
-    class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-  >
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-2">¿Confirmar completación?</h3>
-      <p class="text-gray-600 mb-6">
-        ¿Estás seguro de que deseas marcar esta instalación como completada?
-      </p>
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <div class="flex items-start gap-4">
+      <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h2 class="text-xl font-semibold text-gray-900 mb-2">Detalle Completo en Fase 13</h2>
+        <p class="text-gray-600 mb-4">
+          La funcionalidad completa para ver y actualizar detalles de instalaci�n estar� disponible
+          en la Fase 13.
+        </p>
 
-      <div class="flex gap-3 justify-end">
-        <button
-          type="button"
-          onclick="document.getElementById('confirm-modal').classList.add('hidden')"
-          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
-        >
-          Cancelar
-        </button>
+        <div class="space-y-3 mb-6">
+          <div>
+            <span class="text-sm font-medium text-gray-500">Cliente:</span>
+            <p class="text-gray-900">{installation.client_name}</p>
+          </div>
 
-        <form method="POST" class="inline">
-          <input type="hidden" name="_action" value="update_status" />
-          <input type="hidden" name="status" value="completed" />
-          <button
-            type="submit"
-            class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            Sí, completar
-          </button>
-        </form>
+          <div>
+            <span class="text-sm font-medium text-gray-500">Direcci�n:</span>
+            <p class="text-gray-900">{installation.address}</p>
+          </div>
+
+          <div>
+            <span class="text-sm font-medium text-gray-500">Estado:</span>
+            <div class="mt-1">
+              <StatusBadge status={installation.status} />
+            </div>
+          </div>
+
+          {
+            installation.scheduled_date && (
+              <div>
+                <span class="text-sm font-medium text-gray-500">Fecha programada:</span>
+                <p class="text-gray-900">
+                  {new Date(installation.scheduled_date).toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </p>
+              </div>
+            )
+          }
+
+          {
+            installation.client_phone && (
+              <div>
+                <span class="text-sm font-medium text-gray-500">Tel�fono:</span>
+                <p class="text-gray-900">{installation.client_phone}</p>
+              </div>
+            )
+          }
+        </div>
+
+        <Button variant="secondary" href="/installer/installations">
+          Volver a Instalaciones
+        </Button>
       </div>
     </div>
   </div>
 </DashboardLayout>
-
-<script>
-  document.addEventListener('click', (e) => {
-    const modal = document.getElementById('confirm-modal');
-    if (modal && e.target === modal) {
-      modal.classList.add('hidden');
-    }
-  });
-</script>

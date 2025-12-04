@@ -7,7 +7,17 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['dist', '.astro', 'node_modules', '*.config.js', '*.config.mjs', '*.config.ts']
+    ignores: [
+      'dist',
+      '.astro',
+      'node_modules',
+      '*.config.js',
+      '*.config.mjs',
+      '*.config.ts',
+      '.vercel',
+      'public/sw.js',
+      'scripts/**/*.js'
+    ]
   },
   eslint.configs.recommended,
   {

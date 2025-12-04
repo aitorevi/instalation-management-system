@@ -1,19 +1,203 @@
 ---
-// Placeholder - será reemplazado en Fase 12
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import InstallationCardCompact from '../../components/installations/InstallationCardCompact.astro';
+import EmptyState from '../../components/ui/EmptyState.astro';
+import Button from '../../components/ui/Button.astro';
+import Alert from '../../components/ui/Alert.astro';
+import { getUser } from '../../lib/page-utils';
+import {
+  getMyStats,
+  getTodayInstallations,
+  getUpcomingInstallations,
+  type InstallerStats,
+  type Installation
+} from '../../lib/queries/installer';
+
+const user = getUser(Astro);
+const accessToken = Astro.cookies.get('sb-access-token')?.value ?? '';
+
+let stats: InstallerStats = { pending: 0, inProgress: 0, completed: 0, todayCount: 0 };
+let todayInstallations: Installation[] = [];
+let upcomingInstallations: Installation[] = [];
+let error: string | null = null;
+
+try {
+  [stats, todayInstallations, upcomingInstallations] = await Promise.all([
+    getMyStats(accessToken, user.id),
+    getTodayInstallations(accessToken, user.id),
+    getUpcomingInstallations(accessToken, user.id, 5)
+  ]);
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Error al cargar los datos';
+  console.error('Error loading installer dashboard data:', e);
+}
+
+function formatGreetingDate(): string {
+  const date = new Date();
+  const formatted = date.toLocaleDateString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
+function getFirstName(fullName: string): string {
+  const parts = fullName.split(' ');
+  return parts[0] ?? fullName;
+}
+
+const firstName = getFirstName(user.full_name);
+const greetingDate = formatGreetingDate();
 ---
 
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Installer Dashboard | IMS</title>
-  </head>
-  <body class="flex items-center justify-center min-h-screen bg-gray-50">
-    <div class="text-center">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">👷 Installer Dashboard</h1>
-      <p class="text-gray-600 mb-4">Placeholder - Fase 12</p>
-      <a href="/auth/logout" class="text-primary-600 hover:underline">Cerrar Sesión</a>
+<DashboardLayout title="Dashboard" user={user}>
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+    <p class="text-xl text-gray-700 mt-1">Hola, {firstName}</p>
+    <p class="text-gray-600 mt-1">{greetingDate}</p>
+  </div>
+
+  {
+    error && (
+      <Alert variant="error" title="Error" class="mb-6">
+        {error}
+      </Alert>
+    )
+  }
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+          <svg
+            class="w-6 h-6 text-primary-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            ></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Hoy</p>
+          <p class="text-2xl font-semibold text-gray-900">{stats.todayCount}</p>
+        </div>
+      </div>
     </div>
-  </body>
-</html>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+          <svg
+            class="w-6 h-6 text-yellow-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Pendientes</p>
+          <p class="text-2xl font-semibold text-gray-900">{stats.pending}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">En Progreso</p>
+          <p class="text-2xl font-semibold text-gray-900">{stats.inProgress}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+          <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Completadas</p>
+          <p class="text-2xl font-semibold text-gray-900">{stats.completed}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+    <h2 class="text-lg font-semibold text-gray-900 mb-6">Instalaciones de Hoy</h2>
+
+    {
+      todayInstallations.length === 0 ? (
+        <EmptyState
+          title="No tienes instalaciones programadas para hoy"
+          description="Disfruta tu día libre o revisa las próximas instalaciones."
+        />
+      ) : (
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {todayInstallations.map((installation) => (
+            <InstallationCardCompact
+              installation={installation}
+              href={`/installer/installations/${installation.id}`}
+              showDate={false}
+            />
+          ))}
+        </div>
+      )
+    }
+  </div>
+
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-lg font-semibold text-gray-900">Próximas Instalaciones</h2>
+      <Button variant="ghost" size="sm" href="/installer/installations">Ver todas</Button>
+    </div>
+
+    {
+      upcomingInstallations.length === 0 ? (
+        <EmptyState
+          title="No tienes instalaciones próximas programadas"
+          description="Las nuevas instalaciones aparecerán aquí cuando sean asignadas."
+        />
+      ) : (
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {upcomingInstallations.map((installation) => (
+            <InstallationCardCompact
+              installation={installation}
+              href={`/installer/installations/${installation.id}`}
+              showDate={true}
+            />
+          ))}
+        </div>
+      )
+    }
+  </div>
+</DashboardLayout>
