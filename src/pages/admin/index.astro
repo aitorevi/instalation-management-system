@@ -1,19 +1,155 @@
 ---
-// Placeholder - será reemplazado en Fase 09
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import InstallationCard from '../../components/installations/InstallationCard.astro';
+import EmptyState from '../../components/ui/EmptyState.astro';
+import Button from '../../components/ui/Button.astro';
+import Alert from '../../components/ui/Alert.astro';
+import { getUser } from '../../lib/page-utils';
+import { getInstallationStats, getUpcomingInstallations } from '../../lib/queries/installations';
+import { getUsersCount } from '../../lib/queries/users';
+
+const user = getUser(Astro);
+
+let stats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0 };
+let upcomingInstallations: Awaited<ReturnType<typeof getUpcomingInstallations>> = [];
+let usersCount = { installers: 0, admins: 0 };
+let error: string | null = null;
+
+try {
+  [stats, upcomingInstallations, usersCount] = await Promise.all([
+    getInstallationStats(),
+    getUpcomingInstallations(5),
+    getUsersCount()
+  ]);
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Error al cargar los datos';
+  console.error('Error loading dashboard data:', e);
+}
 ---
 
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard | IMS</title>
-  </head>
-  <body class="flex items-center justify-center min-h-screen bg-gray-50">
-    <div class="text-center">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">🔧 Admin Dashboard</h1>
-      <p class="text-gray-600 mb-4">Placeholder - Fase 09</p>
-      <a href="/auth/logout" class="text-primary-600 hover:underline">Cerrar Sesión</a>
+<DashboardLayout title="Dashboard" user={user}>
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+    <p class="text-gray-600 mt-1">Bienvenido de nuevo, {user.full_name}</p>
+  </div>
+
+  {
+    error && (
+      <Alert variant="error" title="Error" class="mb-6">
+        {error}
+      </Alert>
+    )
+  }
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            ></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Total Instalaciones</p>
+          <p class="text-2xl font-semibold text-gray-900">{stats.total}</p>
+        </div>
+      </div>
     </div>
-  </body>
-</html>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+          <svg
+            class="w-6 h-6 text-yellow-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Pendientes</p>
+          <p class="text-2xl font-semibold text-gray-900">{stats.pending}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+          <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Completadas</p>
+          <p class="text-2xl font-semibold text-gray-900">{stats.completed}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+          <svg
+            class="w-6 h-6 text-purple-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+            ></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Instaladores</p>
+          <p class="text-2xl font-semibold text-gray-900">{usersCount.installers}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-lg font-semibold text-gray-900">Próximas Instalaciones</h2>
+      <Button variant="ghost" size="sm" href="/admin/installations">Ver todas</Button>
+    </div>
+
+    {
+      upcomingInstallations.length === 0 ? (
+        <EmptyState
+          title="No hay instalaciones próximas"
+          description="Crea una nueva instalación para comenzar."
+        >
+          <Button variant="primary" href="/admin/installations/new">
+            Nueva Instalación
+          </Button>
+        </EmptyState>
+      ) : (
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {upcomingInstallations.map((installation) => (
+            <InstallationCard installation={installation} showActions={false} />
+          ))}
+        </div>
+      )
+    }
+  </div>
+</DashboardLayout>

@@ -1,845 +1,1168 @@
-# Frontend Architecture - Phase 14: PWA Setup
+# Frontend Implementation - Phase 12: Installer Dashboard
 
 ## Overview
 
-Phase 14 implements Progressive Web App capabilities for IMS, making the application installable on devices and providing basic offline functionality. This phase focuses on creating PWA assets (manifest, icons, favicon), implementing an offline fallback page, and ensuring proper service worker registration.
+Phase 12 implements the frontend for installer-facing features, allowing installers to view their assigned installations, see today's schedule, upcoming installations, and access a filtered list of all their assignments. This phase focuses on creating a streamlined, mobile-friendly experience for installers in the field.
 
-**Backend Status**: N/A (Frontend-only phase)
+**Current Status**: Backend queries ready from Phase 11. This checklist covers complete frontend implementation with comprehensive testing.
 
-**User Preferences Applied**:
+### Key Features
 
-- Simple placeholder icons with blue (#2563eb) background and 'IMS' text
-- Blue theme color (#2563eb)
-- Moderate caching strategy (network-first with cache fallback)
+1. **Installer Dashboard** (`/installer/index.astro`):
+   - Personalized greeting with installer name and formatted date
+   - 4 stats cards showing counts for today, pending, in progress, and completed installations
+   - "Instalaciones de Hoy" section with compact cards for today's installations
+   - "Próximas Instalaciones" section with compact cards for upcoming installations
+   - Empty states for no installations
+   - "Ver todas" link to full list
 
----
+2. **Compact Installation Card Component** (`InstallationCardCompact.astro`):
+   - Displays time, optional date, client name, address, status badge
+   - Shows phone icon with client phone number
+   - Payment indicator badge if `collect_payment` is true
+   - Optional clickable link (hover states)
+   - Responsive design for mobile and desktop
 
-## Implementation Checklist
+3. **Installations List Page** (`/installer/installations/index.astro`):
+   - Header with total installation count
+   - Status filter dropdown (Todos, Pendiente, En Progreso, Completada)
+   - Filter and Clear buttons
+   - Installations grouped by date (Spanish format: "lunes, 3 de diciembre de 2024")
+   - Compact cards for each installation
+   - Empty state if no installations
 
-### Task 1: Create Placeholder PWA Icons
+4. **Installation Detail Placeholder** (`/installer/installations/[id].astro`):
+   - Simple card showing client name and installation type
+   - Placeholder message: "Detalle completo disponible en Fase 13"
+   - Redirect if installation not found or not assigned to current installer
 
-**Files**:
+### Architecture Principles
 
-- `public/icons/icon-192.png` (NEW)
-- `public/icons/icon-512.png` (NEW)
-- `public/icons/apple-touch-icon.png` (NEW)
-
-**Objective**: Create simple placeholder icons for PWA installation and home screen.
-
-**Implementation Steps**:
-
-- [ ] Create 192x192 PNG icon
-  - Blue background (#2563eb)
-  - White 'IMS' text centered
-  - Sans-serif font, bold weight
-  - Export as `icon-192.png` to `public/icons/`
-
-- [ ] Create 512x512 PNG icon
-  - Blue background (#2563eb)
-  - White 'IMS' text centered
-  - Sans-serif font, bold weight
-  - Larger text proportional to canvas
-  - Export as `icon-512.png` to `public/icons/`
-
-- [ ] Create 180x180 Apple touch icon
-  - Blue background (#2563eb)
-  - White 'IMS' text centered
-  - Sans-serif font, bold weight
-  - Export as `apple-touch-icon.png` to `public/icons/`
-
-**Tools**: Use any of the following:
-
-- Online tool: [Placeholder Image Generator](https://placeholder.com/)
-- ImageMagick CLI (if available)
-- Canvas/Figma/Any image editor
-- Node.js script with `canvas` library
-
-**ImageMagick Example** (if available):
-
-```bash
-convert -size 192x192 xc:#2563eb -fill white -gravity center -pointsize 80 -font Arial-Bold -annotate 0 "IMS" public/icons/icon-192.png
-convert -size 512x512 xc:#2563eb -fill white -gravity center -pointsize 240 -font Arial-Bold -annotate 0 "IMS" public/icons/icon-512.png
-convert -size 180x180 xc:#2563eb -fill white -gravity center -pointsize 72 -font Arial-Bold -annotate 0 "IMS" public/icons/apple-touch-icon.png
-```
-
-**Acceptance Criteria**:
-
-- ✅ All three PNG files exist in `public/icons/` directory
-- ✅ Icons display blue background (#2563eb)
-- ✅ Icons display white 'IMS' text
-- ✅ Icons are correctly sized (192x192, 512x512, 180x180)
-- ✅ Icons are optimized for web (no excessive file size)
-- ✅ Icons load correctly in browser (test with direct URL)
-
-**Estimated Time**: 30 minutes
+- **Mobile-First Design**: Optimized for installers using mobile devices in the field
+- **Consistent UI**: Reuse existing UI components (Button, Select, Badge, EmptyState, StatusBadge)
+- **Data-Driven**: Show installer-specific data only (installations assigned to them)
+- **Security**: RLS policies enforce data access (installers can only see their assignments)
+- **Accessibility**: WCAG 2.1 AA compliance for all interactive elements
+- **Spanish Language**: All UI text in Spanish for target audience
 
 ---
 
-### Task 2: Replace Favicon with IMS Branding
+## Implementation Status Summary
 
-**File**: `public/favicon.svg` (REPLACE)
+### Prerequisites
 
-**Objective**: Replace Astro default favicon with IMS-branded SVG favicon.
+- Phase 01-11 completed (authentication, admin dashboard, installations CRUD, user management)
+- `src/lib/queries/installations.ts` exists with query functions
+- `src/components/ui/*` components available (Button, Select, Badge, EmptyState)
+- `src/components/installations/StatusBadge.astro` available
+- `DashboardLayout` available for page structure
+- Middleware configured for `/installer/*` route protection
 
-**Implementation Steps**:
+### Pending Tasks
 
-- [ ] Create new favicon.svg with IMS branding
-  - Blue rounded rectangle background (#2563eb, rounded corners)
-  - Simple house/building icon in white (represents installations)
-  - Or white 'IMS' text if icon is too complex
-  - Ensure SVG is viewable at 16x16 and 32x32 sizes
-
-**SVG Design Options**:
-
-**Option A: Building Icon**
-
-```svg
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="20" fill="#2563eb"/>
-  <path d="M50 20 L80 45 L80 80 L20 80 L20 45 Z" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="40" y="55" width="20" height="25" fill="white" rx="2"/>
-  <circle cx="50" cy="38" r="8" fill="white"/>
-</svg>
-```
-
-**Option B: Simple IMS Text**
-
-```svg
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="20" fill="#2563eb"/>
-  <text x="50" y="65" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white" text-anchor="middle">IMS</text>
-</svg>
-```
-
-- [ ] Replace existing `public/favicon.svg` with new design
-- [ ] Test favicon in browser (clear cache if needed)
-
-**Acceptance Criteria**:
-
-- ✅ File exists at `public/favicon.svg`
-- ✅ SVG displays correctly in browser tab
-- ✅ SVG uses blue (#2563eb) theme color
-- ✅ SVG is viewable at small sizes (16x16, 32x32)
-- ✅ SVG works in both light and dark mode browsers
-
-**Estimated Time**: 20 minutes
+- Frontend: Compact installation card component
+- Frontend: Installer dashboard page
+- Frontend: Installations list page (with filters and grouping)
+- Frontend: Installation detail placeholder
+- Backend: Query functions for installer-specific data (getInstallerTodayInstallations, getInstallerUpcomingInstallations, getInstallerStats)
+- Testing: Unit tests for new query functions
+- Testing: E2E tests for installer dashboard flows
 
 ---
 
-### Task 3: Create Web App Manifest
+## Detailed Implementation Checklist
 
-**File**: `public/manifest.json` (NEW)
+## SETUP - Backend Queries for Installer Dashboard
 
-**Objective**: Create PWA manifest for installability and app metadata.
+### 1. Backend Queries Implementation
 
-**Implementation Steps**:
+#### 1.1 Add Installer-Specific Queries
 
-- [ ] Create `manifest.json` in `public/` directory
-- [ ] Configure manifest with following properties:
-  - `name`: "IMS - Installation Management System"
-  - `short_name`: "IMS"
-  - `description`: "Sistema de gestión de instalaciones"
-  - `start_url`: "/"
-  - `display`: "standalone"
-  - `background_color`: "#ffffff"
-  - `theme_color`: "#2563eb"
-  - `orientation`: "portrait-primary"
-  - `icons`: Array with 192x192 and 512x512 icons
-  - `categories`: ["business", "productivity"]
-  - `lang`: "es"
-  - `dir`: "ltr"
+**File**: `src/lib/queries/installations.ts` (EXTEND EXISTING)
 
-**Complete Manifest**:
+- [ ] **Import required types**
+  - Import `InstallationStatus` from `@lib/supabase`
+  - Verify existing imports: `createServerClient`, `Installation`, `InstallationWithInstaller`
+  - Acceptance: All required types available
 
-```json
-{
-  "name": "IMS - Installation Management System",
-  "short_name": "IMS",
-  "description": "Sistema de gestión de instalaciones",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
-  "orientation": "portrait-primary",
-  "icons": [
-    {
-      "src": "/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "categories": ["business", "productivity"],
-  "lang": "es",
-  "dir": "ltr"
-}
-```
+- [ ] **Implement `getInstallerTodayInstallations()` function**
+  - Function signature: `async function getInstallerTodayInstallations(accessToken: string, installerId: string): Promise<InstallationWithInstaller[]>`
+  - Get today's date range (start of day to end of day)
+  - Query installations where `assigned_to = installerId` AND `scheduled_date >= today_start` AND `scheduled_date <= today_end`
+  - Exclude archived installations (`archived_at IS NULL`)
+  - Include installer details (join with users table)
+  - Order by `scheduled_date` ascending
+  - Return typed array of installations with installer
+  - Acceptance: Function returns today's installations for specific installer
 
-**Acceptance Criteria**:
+- [ ] **Implement `getInstallerUpcomingInstallations()` function**
+  - Function signature: `async function getInstallerUpcomingInstallations(accessToken: string, installerId: string, limit: number = 10): Promise<InstallationWithInstaller[]>`
+  - Get installations where `assigned_to = installerId` AND `scheduled_date > now()`
+  - Exclude archived installations
+  - Filter to `status IN ['pending', 'in_progress']`
+  - Include installer details
+  - Order by `scheduled_date` ascending
+  - Limit to specified number (default 10)
+  - Return typed array
+  - Acceptance: Function returns upcoming installations for specific installer
 
-- ✅ File exists at `public/manifest.json`
-- ✅ Valid JSON syntax (no errors)
-- ✅ All required properties present
-- ✅ Icon paths are correct (`/icons/icon-192.png`, `/icons/icon-512.png`)
-- ✅ Theme color matches design system (#2563eb)
-- ✅ Display mode is "standalone"
-- ✅ Start URL is "/"
+- [ ] **Implement `getInstallerStats()` function**
+  - Function signature: `async function getInstallerStats(accessToken: string, installerId: string): Promise<{ today: number; pending: number; inProgress: number; completed: number }>`
+  - Query all non-archived installations where `assigned_to = installerId`
+  - Calculate counts:
+    - `today`: Count where `scheduled_date` is today
+    - `pending`: Count where `status = 'pending'`
+    - `inProgress`: Count where `status = 'in_progress'`
+    - `completed`: Count where `status = 'completed'`
+  - Return object with counts
+  - Acceptance: Function returns correct stats for installer
 
-**Estimated Time**: 15 minutes
+- [ ] **Implement `getInstallerInstallationsByStatus()` function**
+  - Function signature: `async function getInstallerInstallationsByStatus(accessToken: string, installerId: string, status?: InstallationStatus): Promise<InstallationWithInstaller[]>`
+  - Query installations where `assigned_to = installerId`
+  - Exclude archived installations
+  - If status provided, filter by `status = status`
+  - Include installer details
+  - Order by `scheduled_date` descending
+  - Return typed array
+  - Acceptance: Function returns filtered installations for installer
+
+- [ ] **Export all new query functions**
+  - Export `getInstallerTodayInstallations`
+  - Export `getInstallerUpcomingInstallations`
+  - Export `getInstallerStats`
+  - Export `getInstallerInstallationsByStatus`
+  - Acceptance: All functions exported and available for import
+
+**Estimated Time**: 1.5 hours
 
 ---
 
-### Task 4: Create Service Worker
+#### 1.2 Unit Tests for Installer Queries
 
-**File**: `public/sw.js` (NEW)
+**File**: `src/lib/queries/installations.test.ts` (NEW OR EXTEND EXISTING)
 
-**Objective**: Implement service worker with moderate caching strategy (network-first with cache fallback) and offline support.
+- [ ] **Setup test environment**
+  - Import Vitest functions: `describe`, `it`, `expect`, `vi`, `beforeEach`
+  - Import functions to test: `getInstallerTodayInstallations`, `getInstallerUpcomingInstallations`, `getInstallerStats`, `getInstallerInstallationsByStatus`
+  - Mock `createServerClient` and Supabase query builder
+  - Create mock installer data (ID, name, email)
+  - Create mock installation data (today, upcoming, various statuses)
+  - Acceptance: Test file structured with comprehensive mocks
 
-**Implementation Steps**:
+- [ ] **Test: getInstallerTodayInstallations() success case**
+  - Mock Supabase query to return 2 installations scheduled for today
+  - Call function with installer ID
+  - Assert returned array has 2 installations
+  - Assert installations are for today's date
+  - Assert `assigned_to` matches installer ID
+  - Acceptance: Test passes for today's installations
 
-- [ ] Create `sw.js` file in `public/` directory
-- [ ] Define cache name with version: `'ims-cache-v1'`
-- [ ] Define static assets to pre-cache:
-  - `/favicon.svg`
-  - `/manifest.json`
-  - `/icons/icon-192.png`
-  - `/icons/icon-512.png`
-- [ ] Implement install event handler
-  - Pre-cache static assets
-  - Call `self.skipWaiting()` to activate immediately
-- [ ] Implement activate event handler
-  - Delete old caches (cache cleanup)
-  - Call `self.clients.claim()` to take control
-- [ ] Implement fetch event handler
-  - **Strategy**: Network-first with cache fallback
-  - Ignore non-same-origin requests
-  - Ignore `/api/*`, `/auth/*`, and Supabase requests
-  - Attempt network fetch first
-  - On success (GET requests), update cache
-  - On network failure, serve from cache
-  - On cache miss + network failure, serve `/offline.html` for navigation requests
-- [ ] Add message event listener (for future updates)
-- [ ] Add push notification handlers (prepared for Phase 15)
-  - `push` event: Show notification with data
-  - `notificationclick` event: Open app or focus existing window
+- [ ] **Test: getInstallerTodayInstallations() no installations**
+  - Mock Supabase query to return empty array
+  - Call function with installer ID
+  - Assert returned array is empty
+  - Acceptance: Test passes for no installations
 
-**Complete Service Worker Code**: See `workspace/planning/14-PWA-SETUP.md` lines 100-253
+- [ ] **Test: getInstallerUpcomingInstallations() success case**
+  - Mock Supabase query to return 5 upcoming installations
+  - Call function with installer ID and limit 5
+  - Assert returned array has 5 installations
+  - Assert all have `scheduled_date > now()`
+  - Assert ordered by scheduled_date ascending
+  - Acceptance: Test passes for upcoming installations
 
-**Key Features**:
+- [ ] **Test: getInstallerUpcomingInstallations() respects limit**
+  - Mock Supabase query to return limited results
+  - Call function with limit 3
+  - Assert returned array has max 3 installations
+  - Acceptance: Test passes for limit parameter
 
-- Network-first strategy (always try to get fresh content)
-- Cache fallback for offline resilience
-- Automatic cache updates on successful fetches
-- Old cache cleanup on activation
-- Prepared for push notifications (Phase 15)
+- [ ] **Test: getInstallerStats() calculates counts correctly**
+  - Mock Supabase query to return 10 installations with mixed statuses
+  - Expected counts: today=2, pending=3, inProgress=2, completed=5
+  - Call function with installer ID
+  - Assert counts match expected values
+  - Acceptance: Test passes for stats calculation
 
-**Acceptance Criteria**:
+- [ ] **Test: getInstallerStats() handles zero installations**
+  - Mock Supabase query to return empty array
+  - Call function with installer ID
+  - Assert all counts are 0
+  - Acceptance: Test passes for zero installations
 
-- ✅ File exists at `public/sw.js`
-- ✅ Valid JavaScript syntax (no errors)
-- ✅ Pre-caches static assets on install
-- ✅ Cleans up old caches on activate
-- ✅ Network-first strategy implemented correctly
-- ✅ Ignores API/auth/Supabase requests
-- ✅ Serves offline page when network and cache unavailable
-- ✅ Push notification handlers prepared (not active yet)
+- [ ] **Test: getInstallerInstallationsByStatus() filters by status**
+  - Mock Supabase query to return 3 pending installations
+  - Call function with installer ID and status 'pending'
+  - Assert returned array has only pending installations
+  - Assert all have `status = 'pending'`
+  - Acceptance: Test passes for status filter
+
+- [ ] **Test: getInstallerInstallationsByStatus() returns all without filter**
+  - Mock Supabase query to return 8 installations (various statuses)
+  - Call function without status parameter
+  - Assert returned array has all 8 installations
+  - Acceptance: Test passes for no filter
+
+- [ ] **Test: Error handling for all functions**
+  - Mock Supabase query to throw error
+  - Call each function
+  - Assert error is thrown with descriptive message
+  - Acceptance: All functions handle errors correctly
+
+- [ ] **Run tests and verify coverage**
+  - Execute `npm test` (or equivalent)
+  - Verify all tests pass (9+ tests)
+  - Check coverage for new query functions (aim for 100%)
+  - Acceptance: All tests green, high coverage
+
+**Estimated Time**: 2 hours
+
+---
+
+## IMPLEMENTATION - Components & Pages
+
+### 2. Compact Installation Card Component
+
+#### 2.1 Create InstallationCardCompact Component
+
+**File**: `src/components/installations/InstallationCardCompact.astro` (NEW)
+
+- [x] **Setup component structure**
+  - Import `StatusBadge` from `@components/installations/StatusBadge.astro`
+  - Import `Badge` from `@components/ui/Badge.astro`
+  - Import `Installation` type from `@lib/queries/installer`
+  - Define Props interface:
+    - `installation: Installation` (required)
+    - `href?: string` (optional link to detail page)
+    - `showDate?: boolean` (default: false, show date in addition to time)
+  - Destructure props with defaults
+  - Acceptance: Component structure ready with TypeScript types
+
+- [x] **Implement helper functions**
+  - `formatTime(dateString: string | null): string`
+    - If null, return 'Sin hora'
+    - Return time formatted as "HH:mm" (e.g., "14:30")
+    - Use Spanish locale: `date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })`
+  - `formatDate(dateString: string | null): string`
+    - If null, return 'Sin fecha'
+    - Return date formatted as "DD/MM/YYYY" (e.g., "03/12/2024")
+    - Use Spanish locale: `date.toLocaleDateString('es-ES')`
+  - Acceptance: Helper functions format dates/times correctly
+
+- [x] **Implement card layout**
+  - Container: White background, rounded corners, border, padding
+  - If `href` provided, wrap in `<a>` tag with hover effect (shadow-md transition)
+  - If no `href`, static card (no hover)
+  - Layout structure:
+    - Top row: Time (bold) and Date (if showDate=true)
+    - Second row: Client name (text-lg font-semibold)
+    - Third row: Address with location icon (text-sm text-gray-600, truncate)
+    - Fourth row: Status badge (right-aligned)
+    - Fifth row (conditional): Phone icon + phone number (if client_phone exists)
+    - Bottom row (conditional): Payment badge (if collect_payment=true, yellow badge "Cobro pendiente")
+  - Acceptance: Card displays all information correctly
+
+- [x] **Implement responsive design**
+  - Mobile (< 640px): Single column, full width
+  - Desktop (>= 640px): Maintain compact size
+  - Test truncation for long addresses (max 2 lines with ellipsis)
+  - Test with/without optional fields (phone, date)
+  - Acceptance: Card responsive and handles missing data
+
+- [x] **Implement accessibility**
+  - If clickable, add `aria-label` to link: "Ver instalación de {client_name}"
+  - Ensure keyboard navigation works (focus ring on link)
+  - Ensure sufficient color contrast for all text
+  - Acceptance: Card meets WCAG 2.1 AA
+
+**Estimated Time**: 2 hours
+
+---
+
+### 3. Installer Dashboard Page
+
+#### 3.1 Create Installer Dashboard Page
+
+**File**: `src/pages/installer/index.astro` (NEW)
+
+- [x] **Setup page structure**
+  - Import `DashboardLayout` from `@layouts/DashboardLayout.astro`
+  - Import `InstallationCardCompact` from `@components/installations/InstallationCardCompact.astro`
+  - Import `Button` from `@components/ui/Button.astro`
+  - Import `EmptyState` from `@components/ui/EmptyState.astro`
+  - Import `Alert` from `@components/ui/Alert.astro`
+  - Import `getUser` from `@lib/page-utils`
+  - Import query functions: `getMyStats`, `getTodayInstallations`, `getUpcomingInstallations`
+  - Get user from `Astro.locals.user`
+  - Get access token from cookies: `Astro.cookies.get('sb-access-token')?.value ?? ''`
+  - Acceptance: Page imports complete
+
+- [x] **Implement data fetching**
+  - Initialize variables: `stats`, `todayInstallations`, `upcomingInstallations`, `error`
+  - Use `Promise.all()` to fetch data in parallel:
+    - `getMyStats(accessToken, user.id)`
+    - `getTodayInstallations(accessToken, user.id)`
+    - `getUpcomingInstallations(accessToken, user.id, 5)`
+  - Wrap in try/catch, set `error` message on failure
+  - Acceptance: Data fetched efficiently
+
+- [x] **Implement helper functions**
+  - `formatGreetingDate(): string`
+    - Format today's date as "lunes, 3 de diciembre de 2024"
+    - Use Spanish locale: `new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })`
+    - Capitalize first letter
+  - `getFirstName(fullName: string): string`
+    - Split full name by space, return first part
+    - Fallback to full name if no space
+  - Acceptance: Helper functions work correctly
+
+- [x] **Implement page header**
+  - Title: "Dashboard" (text-2xl font-bold)
+  - Greeting: "Hola, {firstName}" (text-xl)
+  - Date: Formatted date below greeting (text-gray-600)
+  - Acceptance: Header displays personalized greeting
+
+- [x] **Implement stats cards grid**
+  - 4 cards in responsive grid:
+    - Mobile: 2 columns (grid-cols-2)
+    - Desktop: 4 columns (md:grid-cols-4)
+  - Card 1: "Hoy" - Count of today's installations (bg-primary-100, text-primary-600)
+  - Card 2: "Pendientes" - Count of pending installations (bg-yellow-100, text-yellow-600)
+  - Card 3: "En Progreso" - Count of in-progress installations (bg-blue-100, text-blue-600)
+  - Card 4: "Completadas" - Count of completed installations (bg-green-100, text-green-600)
+  - Each card: Icon + label + count
+  - Acceptance: Stats cards display correctly
+
+- [x] **Implement "Instalaciones de Hoy" section**
+  - Section header: "Instalaciones de Hoy" (text-lg font-semibold)
+  - If `todayInstallations.length === 0`:
+    - Show EmptyState: "No tienes instalaciones programadas para hoy"
+  - Else:
+    - Grid of compact cards (grid-cols-1 sm:grid-cols-2 gap-4)
+    - Map over `todayInstallations`
+    - Render `InstallationCardCompact` with:
+      - `installation={installation}`
+      - `href="/installer/installations/{installation.id}"`
+      - `showDate={false}` (time only, since all are today)
+  - Acceptance: Today's installations displayed with compact cards
+
+- [x] **Implement "Próximas Instalaciones" section**
+  - Section header: "Próximas Instalaciones" (text-lg font-semibold)
+  - Link to full list: "Ver todas" (text-primary-600, right-aligned)
+  - If `upcomingInstallations.length === 0`:
+    - Show EmptyState: "No tienes instalaciones próximas programadas"
+  - Else:
+    - Grid of compact cards (grid-cols-1 sm:grid-cols-2 gap-4)
+    - Map over `upcomingInstallations`
+    - Render `InstallationCardCompact` with:
+      - `installation={installation}`
+      - `href="/installer/installations/{installation.id}"`
+      - `showDate={true}` (show both date and time)
+  - Acceptance: Upcoming installations displayed with date
+
+- [x] **Implement error handling**
+  - If `error` exists, display Alert component at top:
+    - Variant: "error"
+    - Title: "Error al cargar datos"
+    - Message: `{error}`
+  - Acceptance: Errors displayed to user
+
+- [x] **Wrap in DashboardLayout**
+  - Pass `title="Dashboard"` and `user={user}` to layout
+  - Acceptance: Page uses layout correctly
+
+**Estimated Time**: 2.5 hours
+
+---
+
+### 4. Installations List Page (Installer)
+
+#### 4.1 Create Installations List Page
+
+**File**: `src/pages/installer/installations/index.astro` (NEW)
+
+- [x] **Setup page structure**
+  - Import `DashboardLayout` from `@layouts/DashboardLayout.astro`
+  - Import `InstallationCardCompact` from `@components/installations/InstallationCardCompact.astro`
+  - Import `Button` from `@components/ui/Button.astro`
+  - Import `Select` from `@components/ui/Select.astro`
+  - Import `EmptyState` from `@components/ui/EmptyState.astro`
+  - Import `getUser` from `@lib/page-utils`
+  - Import `getMyInstallations` from `@lib/queries/installer`
+  - Import `InstallationStatus` type from `@lib/supabase`
+  - Get user from `Astro.locals.user`
+  - Get access token from cookies
+  - Acceptance: Page imports complete
+
+- [x] **Implement query parameter handling**
+  - Get URL params: `const url = Astro.url`
+  - Extract status filter: `const statusFilter = url.searchParams.get('status') as InstallationStatus | null`
+  - Acceptance: Status filter captured from URL
+
+- [x] **Implement data fetching**
+  - Fetch installations: `const installations = await getMyInstallations(accessToken, user.id, statusFilter ? { status: statusFilter } : undefined)`
+  - Handle errors (try/catch)
+  - Acceptance: Installations fetched with optional filter
+
+- [x] **Implement helper functions**
+  - `formatDateGroup(dateString: string): string`
+    - Parse date and format as "lunes, 3 de diciembre de 2024"
+    - Use Spanish locale: `new Date(dateString).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })`
+    - Capitalize first letter
+  - `groupInstallationsByDate(installations: Installation[]): Map<string, Installation[]>`
+    - Group installations by `scheduled_date` (date part only, ignore time)
+    - Return Map with date string as key, array of installations as value
+    - Sort dates chronologically (oldest first)
+  - Acceptance: Grouping logic works correctly
+
+- [x] **Implement page header**
+  - Title: "Instalaciones" (text-2xl font-bold)
+  - Count: "{installations.length} instalación{installations.length !== 1 ? 'es' : ''}" (text-gray-600)
+  - Acceptance: Header displays title and count
+
+- [x] **Implement status filter form**
+  - Form with GET method (reloads page with query params)
+  - Select dropdown with options:
+    - { value: '', label: 'Todos los estados' }
+    - { value: 'pending', label: 'Pendiente' }
+    - { value: 'in_progress', label: 'En Progreso' }
+    - { value: 'completed', label: 'Completada' }
+  - Selected value: `statusFilter ?? ''`
+  - Buttons:
+    - "Filtrar" (type="submit", primary button)
+    - "Limpiar" (href="/installer/installations", secondary button)
+  - Responsive: Stack on mobile, inline on desktop
+  - Acceptance: Filter form works and updates URL
+
+- [x] **Implement installations grouped list**
+  - If `installations.length === 0`:
+    - Show EmptyState: "No tienes instalaciones asignadas" with description based on filter
+  - Else:
+    - Group installations by date using `groupInstallationsByDate()`
+    - Iterate over grouped map:
+      - Section header: Date formatted with `formatDateGroup()` (text-lg font-semibold mb-4)
+      - Grid of compact cards for that date (grid-cols-1 sm:grid-cols-2 gap-4)
+      - Render `InstallationCardCompact` with:
+        - `installation={installation}`
+        - `href="/installer/installations/{installation.id}"`
+        - `showDate={false}` (since grouped by date, only show time)
+    - Add spacing between date groups (mb-8)
+  - Acceptance: Installations grouped and displayed correctly
+
+- [x] **Wrap in DashboardLayout**
+  - Pass `title="Instalaciones"` and `user={user}` to layout
+  - Acceptance: Page uses layout correctly
+
+**Estimated Time**: 2.5 hours
+
+---
+
+### 5. Installation Detail Placeholder
+
+#### 5.1 Create Installation Detail Placeholder Page
+
+**File**: `src/pages/installer/installations/[id].astro` (NEW)
+
+- [x] **Setup page structure**
+  - Import `DashboardLayout` from `@layouts/DashboardLayout.astro`
+  - Import `Button` from `@components/ui/Button.astro'
+  - Import `StatusBadge` from `@components/installations/StatusBadge.astro`
+  - Import `getUser` from `@lib/page-utils`
+  - Import `getMyInstallationById` from `@lib/queries/installer`
+  - Get user from `Astro.locals.user`
+  - Get access token from cookies
+  - Get route param: `const { id } = Astro.params`
+  - Acceptance: Page imports complete
+
+- [x] **Implement data fetching and validation**
+  - Fetch installation: `const installation = await getMyInstallationById(accessToken, user.id, id)`
+  - If installation is null:
+    - Redirect to `/installer/installations` with error query param
+    - `return Astro.redirect('/installer/installations?error=not-found')`
+  - RLS ensures only assigned installations are returned
+  - Acceptance: Validates installation exists and belongs to installer
+
+- [x] **Implement page header**
+  - Breadcrumb navigation:
+    - Link: "Instalaciones" → `/installer/installations`
+    - Current: `{installation.client_name}`
+  - Title: Client name (text-2xl font-bold)
+  - Subtitle: Installation type (text-gray-600)
+  - Acceptance: Header with breadcrumbs
+
+- [x] **Implement placeholder card**
+  - White card with border and padding
+  - Icon: Info icon (blue circle with "i")
+  - Title: "Detalle Completo en Fase 13" (text-xl font-semibold)
+  - Message: "La funcionalidad completa para ver y actualizar detalles de instalación estará disponible en la Fase 13." (text-gray-600)
+  - Basic info display:
+    - Cliente: `{installation.client_name}`
+    - Dirección: `{installation.address}`
+    - Estado: StatusBadge component
+    - Fecha programada: formatted date (if exists)
+    - Teléfono: client phone (if exists)
+  - Button: "Volver a Instalaciones" (href="/installer/installations")
+  - Acceptance: Placeholder card displays basic info
+
+- [x] **Wrap in DashboardLayout**
+  - Pass `title={installation.client_name}` and `user={user}` to layout
+  - Acceptance: Page uses layout correctly
 
 **Estimated Time**: 1 hour
 
 ---
 
-### Task 5: Create Offline Fallback Page
+## TESTING - Comprehensive E2E Tests
 
-**File**: `public/offline.html` (NEW)
+### 6. E2E Tests - Installer Dashboard
 
-**Objective**: Create standalone offline page with IMS branding and user-friendly messaging.
+#### 6.1 Create Installer Dashboard E2E Test
 
-**Implementation Steps**:
+**File**: `e2e/installer-dashboard.spec.ts` (NEW)
 
-- [ ] Create `offline.html` in `public/` directory
-- [ ] Design standalone HTML page (no external dependencies)
-- [ ] Include inline CSS for styling (mobile-first)
-- [ ] Design layout:
-  - Centered container with gradient background (blue theme)
-  - Icon: Red circle with WiFi-off icon
-  - Heading: "Sin conexión"
-  - Message: "No tienes conexión a internet. Verifica tu conexión e intenta de nuevo."
-  - Button: "Reintentar" (calls `location.reload()`)
-- [ ] Use blue gradient background matching app theme
-- [ ] Ensure responsive design (mobile and desktop)
-- [ ] Include proper meta tags (charset, viewport)
+- [ ] **Setup test structure**
+  - Import Playwright: `import { test, expect } from '@playwright/test'`
+  - Import auth helper: `import { loginAsInstaller } from './helpers/auth'`
+  - Create describe block: "Installer Dashboard"
+  - Setup: Login as installer before each test
+  - Acceptance: Test file structure ready
 
-**Complete HTML Code**: See `workspace/planning/14-PWA-SETUP.md` lines 265-359
+- [ ] **Test: Display personalized greeting**
+  - Navigate to `/installer`
+  - Check: "Hola, {firstName}" visible (use first name of test installer)
+  - Check: Formatted date visible (Spanish format with day of week)
+  - Acceptance: Greeting displays correctly
 
-**Design Features**:
+- [ ] **Test: Display stats cards**
+  - Navigate to `/installer`
+  - Check: "Hoy" card visible with count
+  - Check: "Pendientes" card visible with count
+  - Check: "En Progreso" card visible with count
+  - Check: "Completadas" card visible with count
+  - Verify counts are numbers (not NaN or null)
+  - Acceptance: All 4 stats cards display
 
-- Clean, minimal design
-- Blue gradient background (eff6ff to dbeafe)
-- Red icon for offline state (visual warning)
-- Clear messaging in Spanish
-- Reload button for retry action
-- Fully responsive (mobile-first)
-- No external dependencies (works offline)
+- [ ] **Test: Display today's installations section**
+  - Navigate to `/installer`
+  - Check: "Instalaciones de Hoy" heading visible
+  - If installations exist:
+    - Check: Compact cards visible
+    - Check: Each card shows time (not full date)
+    - Check: Each card shows client name, address, status
+  - Acceptance: Today's section displays correctly
 
-**Acceptance Criteria**:
+- [ ] **Test: Display upcoming installations section**
+  - Navigate to `/installer`
+  - Check: "Próximas Instalaciones" heading visible
+  - Check: "Ver todas" link visible and points to `/installer/installations`
+  - If installations exist:
+    - Check: Compact cards visible
+    - Check: Each card shows date AND time
+    - Check: Each card shows client name, address, status
+  - Acceptance: Upcoming section displays correctly
 
-- ✅ File exists at `public/offline.html`
-- ✅ Valid HTML5 syntax
-- ✅ All CSS is inline (no external stylesheets)
-- ✅ All assets are inline or embedded (no external images)
-- ✅ Responsive design works on mobile and desktop
-- ✅ Reload button triggers `location.reload()`
-- ✅ Uses blue theme colors consistent with app
-- ✅ Spanish language messaging
-- ✅ Accessible (proper semantic HTML)
+- [ ] **Test: Empty state for no today's installations**
+  - Setup: Test installer with no installations today
+  - Navigate to `/installer`
+  - Check: EmptyState component visible
+  - Check: Message "No tienes instalaciones programadas para hoy"
+  - Acceptance: Empty state displays for no installations
 
-**Estimated Time**: 30 minutes
+- [ ] **Test: Empty state for no upcoming installations**
+  - Setup: Test installer with no upcoming installations
+  - Navigate to `/installer`
+  - Check: EmptyState component visible in upcoming section
+  - Check: Message "No tienes instalaciones próximas programadas"
+  - Acceptance: Empty state displays for upcoming section
 
----
+- [ ] **Test: Click compact card navigates to detail**
+  - Setup: Test installer with at least 1 installation
+  - Navigate to `/installer`
+  - Click first compact card
+  - Check: URL changes to `/installer/installations/{id}`
+  - Check: Detail page loads (placeholder in Phase 12)
+  - Acceptance: Card click navigates correctly
 
-### Task 6: Add PWA Meta Tags to BaseLayout
+- [ ] **Test: Click "Ver todas" navigates to list**
+  - Navigate to `/installer`
+  - Click "Ver todas" link
+  - Check: URL changes to `/installer/installations`
+  - Check: List page loads with all installations
+  - Acceptance: Link navigates to installations list
 
-**File**: `src/layouts/BaseLayout.astro` (MODIFY)
+- [ ] **Test: Responsive stats grid**
+  - Set viewport to mobile (375x667)
+  - Navigate to `/installer`
+  - Check: Stats cards in 2-column grid (grid-cols-2)
+  - Set viewport to desktop (1440x900)
+  - Check: Stats cards in 4-column grid (md:grid-cols-4)
+  - Acceptance: Grid responsive
 
-**Objective**: Add PWA-related meta tags and manifest link to BaseLayout.
+- [ ] **Test: Responsive installations grid**
+  - Set viewport to mobile (375x667)
+  - Navigate to `/installer`
+  - Check: Compact cards stack vertically (1 column)
+  - Set viewport to desktop (1440x900)
+  - Check: Compact cards in 2 columns (sm:grid-cols-2)
+  - Acceptance: Cards responsive
 
-**Current BaseLayout** (lines 10-18):
-
-```astro
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content={description} />
-    <meta name="theme-color" content="#2563eb" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>{title} | IMS</title>
-  </head>
-</html>
-```
-
-**Implementation Steps**:
-
-- [ ] Add manifest link after favicon link
-- [ ] Add apple-touch-icon link
-- [ ] Verify theme-color meta tag exists (already present: #2563eb)
-- [ ] Add apple-mobile-web-app-capable meta tag
-- [ ] Add apple-mobile-web-app-status-bar-style meta tag
-- [ ] Add apple-mobile-web-app-title meta tag
-
-**New Tags to Add**:
-
-```astro
-<link rel="manifest" href="/manifest.json" />
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="IMS" />
-```
-
-**Insertion Point**: After line 17 (`<link rel="icon"...`)
-
-**Acceptance Criteria**:
-
-- ✅ Manifest link points to `/manifest.json`
-- ✅ Apple touch icon link points to `/icons/apple-touch-icon.png`
-- ✅ Theme color meta tag is #2563eb (already exists)
-- ✅ Apple web app meta tags added
-- ✅ No TypeScript errors
-- ✅ All tags in correct order (meta tags before links)
-
-**Estimated Time**: 10 minutes
+**Estimated Time**: 2.5 hours
 
 ---
 
-### Task 7: Add Service Worker Registration to BaseLayout
+### 7. E2E Tests - Installations List (Installer)
 
-**File**: `src/layouts/BaseLayout.astro` (MODIFY)
+#### 7.1 Create Installations List E2E Test
 
-**Objective**: Add service worker registration script to BaseLayout.
+**File**: `e2e/installer-installations-list.spec.ts` (NEW)
 
-**Implementation Steps**:
+- [ ] **Setup test structure**
+  - Import Playwright: `import { test, expect } from '@playwright/test'`
+  - Import auth helper: `import { loginAsInstaller } from './helpers/auth'`
+  - Create describe block: "Installer Installations List"
+  - Setup: Login as installer before each test
+  - Acceptance: Test file structure ready
 
-- [ ] Add `<script>` tag after closing `</body>` tag (or at end of body)
-- [ ] Check for service worker support (`'serviceWorker' in navigator`)
-- [ ] Register service worker on window load event
-- [ ] Use `/sw.js` path for registration
-- [ ] Log success and error to console
-- [ ] Wrap in `is:inline` attribute to prevent Vite processing
+- [ ] **Test: Display page header with count**
+  - Navigate to `/installer/installations`
+  - Check: "Instalaciones" heading visible
+  - Check: Count displays (e.g., "12 instalaciones")
+  - Check: Plural/singular grammar correct
+  - Acceptance: Header displays title and count
 
-**Registration Script**:
+- [ ] **Test: Display status filter form**
+  - Navigate to `/installer/installations`
+  - Check: Select dropdown visible with options
+  - Check: Options include "Todos los estados", "Pendiente", "En Progreso", "Completada"
+  - Check: "Filtrar" button visible
+  - Check: "Limpiar" button visible
+  - Acceptance: Filter form displays correctly
 
-```astro
-<!-- Service Worker Registration -->
-<script is:inline>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          console.log('[SW] Registered successfully:', registration.scope);
-        })
-        .catch((error) => {
-          console.error('[SW] Registration failed:', error);
-        });
-    });
-  }
-</script>
-```
+- [ ] **Test: Filter installations by status**
+  - Navigate to `/installer/installations`
+  - Select "Pendiente" from dropdown
+  - Click "Filtrar" button
+  - Check: URL changes to `/installer/installations?status=pending`
+  - Check: Only pending installations displayed
+  - Check: Each card has yellow "Pendiente" badge
+  - Acceptance: Status filter works
 
-**Insertion Point**: Before closing `</body>` tag (after `<slot />`)
+- [ ] **Test: Clear filter**
+  - Navigate to `/installer/installations?status=pending`
+  - Click "Limpiar" button
+  - Check: URL changes to `/installer/installations` (no query params)
+  - Check: All installations displayed (no filter)
+  - Acceptance: Clear filter works
 
-**Key Points**:
+- [ ] **Test: Installations grouped by date**
+  - Navigate to `/installer/installations`
+  - Check: Date headers visible (Spanish format: "lunes, 3 de diciembre de 2024")
+  - Check: Installations grouped under correct date headers
+  - Check: Dates ordered chronologically (oldest first)
+  - Check: Each group has compact cards
+  - Acceptance: Grouping by date works
 
-- Use `is:inline` to prevent Vite from processing the script
-- Register on `load` event to avoid blocking initial page load
-- Feature detection for service worker support
-- Console logging for debugging
+- [ ] **Test: Compact cards display correctly**
+  - Navigate to `/installer/installations`
+  - Find first compact card
+  - Check: Time displayed (HH:mm format)
+  - Check: Client name displayed
+  - Check: Address displayed (truncated if long)
+  - Check: Status badge displayed
+  - Check: No full date displayed (only time, since grouped by date)
+  - Acceptance: Compact cards show correct info
 
-**Acceptance Criteria**:
+- [ ] **Test: Click card navigates to detail**
+  - Navigate to `/installer/installations`
+  - Click first compact card
+  - Check: URL changes to `/installer/installations/{id}`
+  - Check: Detail page loads (placeholder)
+  - Acceptance: Navigation works
 
-- ✅ Script tag added to BaseLayout
-- ✅ Uses `is:inline` attribute
-- ✅ Feature detection for service worker support
-- ✅ Registers on window load event
-- ✅ Logs success/error to console
-- ✅ Service worker path is `/sw.js`
-- ✅ No JavaScript errors in console
+- [ ] **Test: Empty state for no installations**
+  - Setup: Test installer with no installations
+  - Navigate to `/installer/installations`
+  - Check: EmptyState component visible
+  - Check: Message "No tienes instalaciones asignadas"
+  - Acceptance: Empty state displays
 
-**Estimated Time**: 10 minutes
+- [ ] **Test: Empty state for filtered results**
+  - Navigate to `/installer/installations?status=cancelled`
+  - If no cancelled installations:
+    - Check: EmptyState visible
+    - Check: Message indicates no installations match filter
+  - Acceptance: Empty state for filtered results
 
----
+- [ ] **Test: Responsive filter form**
+  - Set viewport to mobile (375x667)
+  - Navigate to `/installer/installations`
+  - Check: Filter elements stack vertically
+  - Set viewport to desktop (1440x900)
+  - Check: Filter elements inline horizontally
+  - Acceptance: Form responsive
 
-### Task 8: Verify PWA Meta Tags in Other Layouts
+- [ ] **Test: Responsive installations grid**
+  - Set viewport to mobile (375x667)
+  - Navigate to `/installer/installations`
+  - Check: Cards stack vertically (1 column)
+  - Set viewport to desktop (1440x900)
+  - Check: Cards in 2 columns (sm:grid-cols-2)
+  - Acceptance: Grid responsive
 
-**Files**:
-
-- `src/layouts/DashboardLayout.astro` (CHECK)
-- `src/layouts/AuthLayout.astro` (CHECK)
-
-**Objective**: Ensure PWA meta tags are inherited from BaseLayout (or add if needed).
-
-**Implementation Steps**:
-
-- [ ] Review DashboardLayout.astro
-  - Verify it wraps content with `<BaseLayout>`
-  - If not, add manifest and icon links to `<head>`
-- [ ] Review AuthLayout.astro
-  - Verify it wraps content with `<BaseLayout>`
-  - If not, add manifest and icon links to `<head>`
-- [ ] Confirm all layouts inherit PWA capabilities
-
-**Current Layout Structure**:
-
-- `DashboardLayout.astro` → Uses `<BaseLayout>` (line 14)
-- `AuthLayout.astro` → Does NOT use `<BaseLayout>` (standalone HTML)
-
-**For AuthLayout.astro** (lines 10-16), add same meta tags as BaseLayout:
-
-```astro
-<meta name="theme-color" content="#2563eb" />
-<link rel="manifest" href="/manifest.json" />
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="IMS" />
-```
-
-**Also add service worker registration script** to AuthLayout before `</body>`.
-
-**Acceptance Criteria**:
-
-- ✅ DashboardLayout inherits PWA meta tags from BaseLayout
-- ✅ AuthLayout has PWA meta tags added directly
-- ✅ AuthLayout has service worker registration script
-- ✅ All layouts support PWA installation
-- ✅ No duplicate meta tags
-- ✅ No TypeScript errors
-
-**Estimated Time**: 20 minutes
+**Estimated Time**: 2.5 hours
 
 ---
 
-## Testing Checklist
+### 8. E2E Tests - Installation Detail Placeholder
 
-### Manual Testing: PWA Installation
+#### 8.1 Create Detail Placeholder E2E Test
 
-- [ ] **Test 1: Verify Manifest in DevTools**
-  - Open Chrome DevTools (F12)
-  - Navigate to Application → Manifest
-  - Expected: Manifest data displayed correctly (name, icons, theme color)
-  - Expected: No errors or warnings
+**File**: `e2e/installer-installation-detail.spec.ts` (NEW)
 
-- [ ] **Test 2: Verify Service Worker Registration**
-  - In DevTools → Application → Service Workers
-  - Expected: Service worker status "activated and is running"
-  - Expected: Scope is "/" (root)
-  - Console log: "[SW] Registered successfully"
+- [ ] **Setup test structure**
+  - Import Playwright: `import { test, expect } from '@playwright/test'`
+  - Import auth helper: `import { loginAsInstaller } from './helpers/auth'`
+  - Create describe block: "Installer Installation Detail"
+  - Setup: Login as installer before each test
+  - Acceptance: Test file structure ready
 
-- [ ] **Test 3: Verify Static Asset Caching**
-  - In DevTools → Application → Cache Storage
-  - Expected: Cache named "ims-cache-v1" exists
-  - Expected: Cache contains: favicon.svg, manifest.json, icon-192.png, icon-512.png
-  - Clear cache and reload → Cache repopulates
+- [ ] **Test: Display breadcrumb navigation**
+  - Setup: Get first installation ID for test installer
+  - Navigate to `/installer/installations/{id}`
+  - Check: Breadcrumb visible with "Instalaciones" link
+  - Check: Current breadcrumb shows client name
+  - Click "Instalaciones" link
+  - Check: Navigates back to `/installer/installations`
+  - Acceptance: Breadcrumb navigation works
 
-- [ ] **Test 4: Check PWA Installability**
-  - In Chrome, check address bar for install icon
-  - OR DevTools → Application → Manifest → "Installability" section
-  - Expected: "Installable" or "No installability issues detected"
-  - Expected: Install prompt available
+- [ ] **Test: Display page header**
+  - Navigate to `/installer/installations/{id}`
+  - Check: Client name displayed as title (text-2xl)
+  - Check: Installation type displayed as subtitle
+  - Acceptance: Header displays correctly
 
-- [ ] **Test 5: Install PWA on Desktop**
-  - Click install icon in address bar
-  - OR Chrome menu → "Install IMS..."
-  - Expected: Installation dialog appears
-  - Expected: App icon and name shown correctly
-  - Click "Install"
-  - Expected: PWA opens in standalone window
-  - Expected: PWA appears in OS app launcher
+- [ ] **Test: Display placeholder card**
+  - Navigate to `/installer/installations/{id}`
+  - Check: Info icon visible
+  - Check: Title "Detalle Completo en Fase 13" visible
+  - Check: Placeholder message visible
+  - Check: Basic info displayed (Cliente, Dirección, Estado)
+  - Check: StatusBadge component visible
+  - Acceptance: Placeholder card displays
 
-- [ ] **Test 6: Install PWA on Mobile (iOS)**
-  - Open app in Safari on iOS
-  - Tap Share button → "Add to Home Screen"
-  - Expected: Icon preview shows apple-touch-icon
-  - Expected: Name shows "IMS"
-  - Add to home screen
-  - Expected: Icon appears on home screen
-  - Tap icon → Expected: App opens in standalone mode
+- [ ] **Test: Display "Volver a Instalaciones" button**
+  - Navigate to `/installer/installations/{id}`
+  - Check: Button visible with text "Volver a Instalaciones"
+  - Click button
+  - Check: Navigates to `/installer/installations`
+  - Acceptance: Button navigates correctly
 
-- [ ] **Test 7: Install PWA on Mobile (Android)**
-  - Open app in Chrome on Android
-  - Tap menu (three dots) → "Install app" or "Add to Home screen"
-  - Expected: Installation dialog with app name and icon
-  - Install app
-  - Expected: Icon appears on home screen
-  - Tap icon → Expected: App opens in standalone mode
+- [ ] **Test: Redirect if installation not found**
+  - Navigate to `/installer/installations/00000000-0000-0000-0000-000000000000` (invalid ID)
+  - Check: Redirects to `/installer/installations`
+  - Check: URL contains error query param (error=not-found)
+  - Acceptance: Redirect works for not found
 
-### Manual Testing: Offline Functionality
+- [ ] **Test: Redirect if installation not assigned**
+  - Setup: Get installation ID assigned to different installer
+  - Navigate to `/installer/installations/{other_installer_id}`
+  - Check: Redirects to `/installer/installations`
+  - Check: URL contains error query param (error=not-assigned)
+  - Acceptance: Redirect works for not assigned
 
-- [ ] **Test 8: Test Offline Page**
-  - Open DevTools → Network tab
-  - Enable "Offline" mode
-  - Navigate to new page (e.g., type random URL)
-  - Expected: `offline.html` page loads
-  - Expected: "Sin conexión" heading visible
-  - Expected: "Reintentar" button visible
-  - Click "Reintentar" → Expected: Page attempts reload
+- [ ] **Test: Display error message after redirect**
+  - Navigate to `/installer/installations?error=not-found`
+  - Check: Error message visible (Alert component or similar)
+  - Check: Message indicates installation not found
+  - Acceptance: Error message displays
 
-- [ ] **Test 9: Test Network-First Caching**
-  - Visit a page with service worker active
-  - Open DevTools → Network tab
-  - Disable cache in DevTools (checkbox)
-  - Reload page → Expected: Network request made
-  - Check Cache Storage → Expected: Page cached after successful fetch
-  - Enable "Offline" mode
-  - Reload page → Expected: Cached version served
-
-- [ ] **Test 10: Test Cache Update on Network Success**
-  - Clear cache in DevTools
-  - Visit page (online) → Expected: Network request + cache update
-  - Check Cache Storage → Expected: Page in cache
-  - Modify page content on server (if possible)
-  - Reload page (online) → Expected: New content fetched and cached
-
-- [ ] **Test 11: Verify API Requests Not Cached**
-  - Open DevTools → Network tab
-  - Perform action that calls `/api/*` or Supabase
-  - Enable "Offline" mode
-  - Retry API call → Expected: Network error (not served from cache)
-  - Check Cache Storage → Expected: API responses NOT in cache
-
-### Manual Testing: Service Worker Updates
-
-- [ ] **Test 12: Test Service Worker Update**
-  - Modify `sw.js` (change CACHE_NAME to 'ims-cache-v2')
-  - Reload page in browser
-  - DevTools → Application → Service Workers
-  - Expected: New service worker "waiting to activate"
-  - Close all app tabs/windows
-  - Reopen app → Expected: New service worker activated
-  - Check Cache Storage → Expected: Old cache deleted, new cache created
-
-- [ ] **Test 13: Test skipWaiting Message**
-  - Modify `sw.js` again (version v3)
-  - Reload page
-  - Open console
-  - Run: `navigator.serviceWorker.controller.postMessage({type: 'SKIP_WAITING'})`
-  - Expected: New service worker activates immediately
-  - Expected: Page reloads with new service worker
-
-### Visual Testing
-
-- [ ] **Test 14: Verify Favicon Display**
-  - Open app in browser
-  - Check browser tab → Expected: IMS favicon visible
-  - Check in both light and dark mode
-  - Check on mobile browser
-
-- [ ] **Test 15: Verify Theme Color**
-  - Open app in Chrome on Android
-  - Expected: Address bar color is blue (#2563eb)
-  - Scroll down → Expected: Theme color persists
-
-- [ ] **Test 16: Verify Installed App Icon**
-  - After installation, check app icon on home screen
-  - Expected: Blue icon with 'IMS' text
-  - Expected: Icon is not pixelated or blurry
-
-- [ ] **Test 17: Verify Splash Screen (Android)**
-  - Install PWA on Android
-  - Close app completely
-  - Reopen app from home screen
-  - Expected: Brief splash screen with IMS icon and blue background
-  - Expected: Splash screen matches theme color
-
-### Cross-Browser Testing
-
-- [ ] **Test 18: Test in Chrome Desktop**
-  - All features work as expected
-  - PWA installable
-  - Service worker registers
-  - Offline page works
-
-- [ ] **Test 19: Test in Edge Desktop**
-  - All features work as expected
-  - PWA installable
-  - Service worker registers
-
-- [ ] **Test 20: Test in Safari Desktop (macOS)**
-  - Service worker support (Safari 11.1+)
-  - Manifest support (Safari 15+)
-  - Install via menu (limited support)
-
-- [ ] **Test 21: Test in Chrome Mobile (Android)**
-  - Install banner appears
-  - PWA installs correctly
-  - Standalone mode works
-  - Theme color applies
-
-- [ ] **Test 22: Test in Safari Mobile (iOS)**
-  - Add to Home Screen works
-  - Apple touch icon displays
-  - Standalone mode works
-  - Status bar styling correct
-
-### Lighthouse PWA Audit
-
-- [ ] **Test 23: Run Lighthouse PWA Audit**
-  - Open DevTools → Lighthouse
-  - Select "Progressive Web App" category
-  - Run audit (mobile or desktop)
-  - Expected: Score ≥ 90/100
-  - Expected: All core PWA checks pass:
-    - ✅ Registers a service worker
-    - ✅ Responds with 200 when offline
-    - ✅ Has a web app manifest
-    - ✅ Uses HTTPS (in production)
-    - ✅ Redirects HTTP to HTTPS (in production)
-    - ✅ Configured for a custom splash screen
-    - ✅ Sets a theme color
-    - ✅ Provides valid apple-touch-icon
-  - Review any warnings or failures
-  - Fix issues and re-run audit
+**Estimated Time**: 1.5 hours
 
 ---
 
-## Acceptance Criteria Summary
+### 9. E2E Tests - Compact Installation Card Component
 
-### Asset Creation
+#### 9.1 Create Component E2E Test
 
-- ✅ Three PWA icons created and optimized (192x192, 512x512, 180x180)
-- ✅ Favicon replaced with IMS branding
-- ✅ All icons use blue (#2563eb) theme color
-- ✅ All icons display 'IMS' branding
-- ✅ All assets load correctly in browser
+**File**: `e2e/installation-card-compact.spec.ts` (NEW)
 
-### Configuration
+- [ ] **Setup test structure**
+  - Import Playwright: `import { test, expect } from '@playwright/test'`
+  - Import auth helper: `import { loginAsInstaller } from './helpers/auth'`
+  - Create describe block: "InstallationCardCompact Component"
+  - Setup: Login as installer and navigate to dashboard
+  - Acceptance: Test file structure ready
 
-- ✅ Web app manifest created and valid
-- ✅ Manifest properly configured with app metadata
-- ✅ Manifest references correct icon paths
-- ✅ Theme color is #2563eb throughout
+- [ ] **Test: Display time**
+  - Navigate to `/installer` (dashboard with today's installations)
+  - Find first compact card
+  - Check: Time displayed in HH:mm format (e.g., "14:30")
+  - Check: Time is bold or emphasized
+  - Acceptance: Time displays correctly
 
-### Service Worker
+- [ ] **Test: Display date when showDate=true**
+  - Navigate to `/installer` (upcoming installations section)
+  - Find first compact card
+  - Check: Date displayed in DD/MM/YYYY format (e.g., "03/12/2024")
+  - Check: Both date and time visible
+  - Acceptance: Date displays when enabled
 
-- ✅ Service worker implemented with network-first strategy
-- ✅ Service worker pre-caches static assets
-- ✅ Service worker cleans up old caches
-- ✅ Service worker ignores API/auth requests
-- ✅ Service worker serves offline page when needed
-- ✅ Push notification handlers prepared (inactive)
+- [ ] **Test: Hide date when showDate=false**
+  - Navigate to `/installer` (today's installations section)
+  - Find first compact card
+  - Check: Only time visible, no full date
+  - Acceptance: Date hidden when disabled
 
-### Offline Page
+- [ ] **Test: Display client name**
+  - Find compact card
+  - Check: Client name visible (text-lg font-semibold)
+  - Acceptance: Client name displays
 
-- ✅ Offline page created with IMS branding
-- ✅ Offline page is standalone (no external dependencies)
-- ✅ Offline page is responsive
-- ✅ Offline page has retry button
+- [ ] **Test: Display address with icon**
+  - Find compact card
+  - Check: Location icon visible
+  - Check: Address text visible (truncated if long)
+  - Acceptance: Address displays with icon
 
-### Layout Integration
+- [ ] **Test: Display status badge**
+  - Find compact card with specific status (e.g., pending)
+  - Check: StatusBadge component visible
+  - Check: Badge shows correct status (e.g., "Pendiente" with yellow color)
+  - Acceptance: Status badge displays
 
-- ✅ BaseLayout includes PWA meta tags
-- ✅ BaseLayout includes manifest link
-- ✅ BaseLayout includes service worker registration
-- ✅ AuthLayout includes PWA meta tags (standalone layout)
-- ✅ DashboardLayout inherits from BaseLayout (no changes needed)
+- [ ] **Test: Display phone number with icon**
+  - Setup: Installation with client_phone populated
+  - Find compact card
+  - Check: Phone icon visible
+  - Check: Phone number displayed (formatted)
+  - Acceptance: Phone displays with icon
 
-### Installation
+- [ ] **Test: Hide phone when not available**
+  - Setup: Installation without client_phone
+  - Find compact card
+  - Check: Phone icon NOT visible
+  - Check: No phone number displayed
+  - Acceptance: Phone hidden when missing
 
-- ✅ PWA is installable in Chrome/Edge desktop
-- ✅ PWA is installable in Safari iOS
-- ✅ PWA is installable in Chrome Android
-- ✅ Install prompt appears automatically (Chrome Android)
-- ✅ Installed app opens in standalone mode
-- ✅ Installed app icon displays correctly
+- [ ] **Test: Display payment badge when collect_payment=true**
+  - Setup: Installation with collect_payment=true
+  - Find compact card
+  - Check: Yellow badge visible with text "Cobro pendiente"
+  - Acceptance: Payment badge displays
 
-### Offline Functionality
+- [ ] **Test: Hide payment badge when collect_payment=false**
+  - Setup: Installation with collect_payment=false
+  - Find compact card
+  - Check: No payment badge visible
+  - Acceptance: Payment badge hidden
 
-- ✅ App serves cached pages when offline
-- ✅ App shows offline page for uncached navigation
-- ✅ App updates cache on successful network requests
-- ✅ API requests bypass cache (always network)
+- [ ] **Test: Card is clickable when href provided**
+  - Find compact card with href
+  - Check: Card is wrapped in <a> tag
+  - Hover over card
+  - Check: Shadow effect on hover (hover:shadow-md)
+  - Click card
+  - Check: Navigation works
+  - Acceptance: Clickable card works
 
-### Testing
+- [ ] **Test: Card is not clickable when href not provided**
+  - Setup: Render card without href (modify test data)
+  - Find compact card
+  - Check: Card is NOT wrapped in <a> tag
+  - Check: No hover effect
+  - Acceptance: Static card works
 
-- ✅ All manual tests pass
-- ✅ Lighthouse PWA audit score ≥ 90/100
-- ✅ Cross-browser testing completed
-- ✅ Mobile testing completed (iOS and Android)
+- [ ] **Test: Keyboard navigation for clickable card**
+  - Tab to compact card link
+  - Check: Focus ring visible (keyboard navigation)
+  - Press Enter
+  - Check: Navigation works
+  - Acceptance: Keyboard navigation works
 
----
+- [ ] **Test: Truncation for long address**
+  - Setup: Installation with very long address (>100 characters)
+  - Find compact card
+  - Check: Address truncated with ellipsis (...)
+  - Check: Maximum 2 lines displayed
+  - Acceptance: Long addresses truncated
 
-## File Structure
-
-```
-public/
-├── icons/
-│   ├── icon-192.png          # NEW - 192x192 PWA icon
-│   ├── icon-512.png          # NEW - 512x512 PWA icon
-│   └── apple-touch-icon.png  # NEW - 180x180 Apple icon
-├── favicon.svg               # MODIFIED - IMS branded favicon
-├── manifest.json             # NEW - Web app manifest
-├── sw.js                     # NEW - Service worker
-└── offline.html              # NEW - Offline fallback page
-
-src/layouts/
-├── BaseLayout.astro          # MODIFIED - Add PWA meta tags + SW registration
-└── AuthLayout.astro          # MODIFIED - Add PWA meta tags + SW registration
-```
-
----
-
-## Implementation Notes
-
-### Icon Design Philosophy
-
-- **Simplicity**: Placeholder icons use simple text to avoid design complexity
-- **Branding**: Blue (#2563eb) aligns with app theme color
-- **Recognizability**: 'IMS' text is clear and readable at all sizes
-- **Future**: Can be replaced with professional icons later without code changes
-
-### Caching Strategy Rationale
-
-- **Network-First**: Prioritizes fresh content when online
-- **Cache Fallback**: Ensures resilience when offline
-- **Moderate**: Balances performance and data freshness
-- **API Exclusion**: Auth and database requests always use network
-
-### Service Worker Lifecycle
-
-1. **Install**: Pre-cache static assets
-2. **Activate**: Clean up old caches, take control of pages
-3. **Fetch**: Intercept requests, apply caching strategy
-4. **Update**: New SW version waits for old version to release, then activates
-
-### Offline Strategy
-
-- **Static Assets**: Always cached (icons, manifest, favicon)
-- **Pages**: Cached after first visit (network-first)
-- **API Requests**: Never cached (always network)
-- **Uncached Pages**: Show offline.html fallback
-
-### iOS Considerations
-
-- Safari has limited PWA support (no install banner)
-- Requires "Add to Home Screen" manual action
-- Uses apple-touch-icon for home screen icon
-- Meta tags control status bar and standalone mode
-
-### Android Considerations
-
-- Chrome shows automatic install banner (if criteria met)
-- Splash screen generated from manifest
-- Theme color applies to status bar and address bar
-- Better PWA support than iOS
-
-### Testing Strategy
-
-- **Manual Testing**: Covers all user-facing functionality
-- **DevTools**: Verify technical implementation
-- **Lighthouse**: Automated PWA audit
-- **Cross-Browser**: Ensure compatibility
-- **Cross-Platform**: Mobile and desktop testing
-
-### Future Enhancements (Phase 15+)
-
-- Push notifications (handlers already prepared in SW)
-- Background sync for offline actions
-- Advanced caching strategies (cache-first for static, network-first for dynamic)
-- Update notifications for new SW versions
-- Professional icon design
+**Estimated Time**: 2 hours
 
 ---
 
-## Troubleshooting
+## VERIFICATION - Manual Testing Checklist
 
-### Service Worker Not Registering
+### 10. Manual Testing
 
-- Check console for errors
-- Ensure `/sw.js` is accessible (200 response)
-- Verify HTTPS in production (localhost OK for development)
-- Clear browser cache and reload
-- Check DevTools → Application → Service Workers for errors
+#### 10.1 Installer Dashboard
 
-### PWA Not Installable
+- [ ] **Verify personalized greeting**
+  - Login as installer
+  - Navigate to `/installer`
+  - Check: Greeting shows first name correctly
+  - Check: Date formatted in Spanish (e.g., "lunes, 3 de diciembre de 2024")
+  - Check: First letter of date is capitalized
+  - Acceptance: Greeting displays correctly
 
-- Run Lighthouse audit to identify issues
-- Verify manifest is valid JSON
-- Ensure all manifest icons exist and are accessible
-- Check that start_url is valid
-- Ensure HTTPS in production
-- Check DevTools → Application → Manifest for errors
+- [ ] **Verify stats cards**
+  - Check: All 4 stats cards visible
+  - Check: "Hoy" card shows count of today's installations (primary-600 color)
+  - Check: "Pendientes" card shows count of pending (yellow-600 color)
+  - Check: "En Progreso" card shows count of in-progress (blue-600 color)
+  - Check: "Completadas" card shows count of completed (green-600 color)
+  - Check: Numbers are accurate (match database)
+  - Acceptance: Stats cards display correct data
 
-### Offline Page Not Showing
+- [ ] **Verify today's installations section**
+  - Check: "Instalaciones de Hoy" heading visible
+  - If installations exist:
+    - Check: Compact cards displayed
+    - Check: Each card shows time only (no date)
+    - Check: Each card shows client name, address, status
+    - Check: Cards are clickable (hover effect)
+  - If no installations:
+    - Check: EmptyState component visible
+    - Check: Message "No tienes instalaciones programadas para hoy"
+  - Acceptance: Today's section works correctly
 
-- Verify `offline.html` exists in `public/`
-- Check service worker fetch handler logic
-- Test with DevTools offline mode
-- Clear cache and re-register service worker
-- Check network tab for offline.html request
+- [ ] **Verify upcoming installations section**
+  - Check: "Próximas Instalaciones" heading visible
+  - Check: "Ver todas" link visible and works
+  - If installations exist:
+    - Check: Compact cards displayed
+    - Check: Each card shows date AND time
+    - Check: Cards are clickable
+  - If no installations:
+    - Check: EmptyState component visible
+    - Check: Message "No tienes instalaciones próximas programadas"
+  - Acceptance: Upcoming section works correctly
 
-### Icons Not Displaying
+- [ ] **Verify navigation**
+  - Click compact card in today's section
+  - Check: Navigates to `/installer/installations/{id}`
+  - Go back
+  - Click "Ver todas" link
+  - Check: Navigates to `/installer/installations`
+  - Acceptance: Navigation works
 
-- Verify icon files exist in `public/icons/`
-- Check file names match manifest exactly
-- Clear browser cache
-- Test icon URLs directly in browser
-- Check file sizes (not too large)
+- [ ] **Verify error handling**
+  - Simulate Supabase error (disconnect network or use invalid token)
+  - Refresh dashboard
+  - Check: Alert component displays error message
+  - Check: Page doesn't crash (graceful error handling)
+  - Acceptance: Errors handled gracefully
 
-### Cache Not Updating
+#### 10.2 Installations List Page
 
-- Check cache name in service worker
-- Verify old caches are being deleted in activate event
-- Force update service worker in DevTools
-- Clear cache manually in DevTools
-- Check network tab for cache hits/misses
+- [ ] **Verify page header**
+  - Navigate to `/installer/installations`
+  - Check: "Instalaciones" heading visible
+  - Check: Count displays correctly (e.g., "12 instalaciones")
+  - Check: Singular form for 1 installation ("1 instalación")
+  - Acceptance: Header displays correctly
+
+- [ ] **Verify status filter**
+  - Check: Select dropdown visible with all options
+  - Select "Pendiente"
+  - Click "Filtrar"
+  - Check: URL updates to include `?status=pending`
+  - Check: Only pending installations displayed
+  - Check: All displayed cards have yellow "Pendiente" badge
+  - Acceptance: Filter works correctly
+
+- [ ] **Verify clear filter**
+  - Apply filter (e.g., "Pendiente")
+  - Click "Limpiar" button
+  - Check: URL resets to `/installer/installations` (no query params)
+  - Check: All installations displayed (no filter)
+  - Acceptance: Clear filter works
+
+- [ ] **Verify date grouping**
+  - Check: Installations grouped by date
+  - Check: Date headers formatted in Spanish (e.g., "lunes, 3 de diciembre de 2024")
+  - Check: First letter capitalized
+  - Check: Dates ordered chronologically (oldest first)
+  - Check: Each group contains correct installations
+  - Acceptance: Grouping works correctly
+
+- [ ] **Verify compact cards**
+  - Find a compact card
+  - Check: Time displayed (HH:mm format)
+  - Check: Client name displayed
+  - Check: Address displayed (truncated if long)
+  - Check: Status badge displayed
+  - Check: Phone icon and number if available
+  - Check: Payment badge if collect_payment=true
+  - Check: Cards are clickable (hover effect)
+  - Acceptance: Cards display all information
+
+- [ ] **Verify navigation from list**
+  - Click a compact card
+  - Check: Navigates to `/installer/installations/{id}`
+  - Check: Detail page loads
+  - Acceptance: Navigation works
+
+- [ ] **Verify empty states**
+  - Test scenario: Installer with no installations
+  - Navigate to `/installer/installations`
+  - Check: EmptyState component visible
+  - Check: Message "No tienes instalaciones asignadas"
+  - Apply filter that returns no results
+  - Check: EmptyState visible with appropriate message
+  - Acceptance: Empty states display correctly
+
+#### 10.3 Installation Detail Placeholder
+
+- [ ] **Verify breadcrumb navigation**
+  - Navigate to installation detail page
+  - Check: Breadcrumb visible
+  - Check: "Instalaciones" link works (navigates back)
+  - Check: Current breadcrumb shows client name
+  - Acceptance: Breadcrumb works
+
+- [ ] **Verify page header**
+  - Check: Client name displayed as title
+  - Check: Installation type displayed as subtitle
+  - Acceptance: Header displays correctly
+
+- [ ] **Verify placeholder card**
+  - Check: Info icon visible
+  - Check: Title "Detalle Completo en Fase 13" visible
+  - Check: Placeholder message visible
+  - Check: Basic info displayed:
+    - Cliente: {client_name}
+    - Dirección: {address}
+    - Estado: StatusBadge component
+  - Acceptance: Placeholder card displays
+
+- [ ] **Verify "Volver a Instalaciones" button**
+  - Check: Button visible
+  - Click button
+  - Check: Navigates to `/installer/installations`
+  - Acceptance: Button works
+
+- [ ] **Verify access control**
+  - Test scenario: Navigate to installation assigned to different installer
+  - Check: Redirects to `/installer/installations`
+  - Check: Error query param in URL (`error=not-assigned`)
+  - Test scenario: Navigate to non-existent installation ID
+  - Check: Redirects to `/installer/installations`
+  - Check: Error query param in URL (`error=not-found`)
+  - Acceptance: Access control works
+
+#### 10.4 Responsive Design
+
+- [ ] **Test mobile layout (375px)**
+  - Resize browser to 375px width
+  - Dashboard:
+    - Check: Stats cards in 2-column grid
+    - Check: Compact cards stack vertically (1 column)
+  - Installations list:
+    - Check: Filter form elements stack vertically
+    - Check: Compact cards stack vertically
+  - Detail page:
+    - Check: Breadcrumb wraps if needed
+    - Check: Content fits in narrow viewport
+  - Acceptance: Mobile layout works
+
+- [ ] **Test tablet layout (768px)**
+  - Resize browser to 768px width
+  - Dashboard:
+    - Check: Stats cards in 4 columns (md:grid-cols-4)
+    - Check: Compact cards in 2 columns (sm:grid-cols-2)
+  - Installations list:
+    - Check: Filter form inline
+    - Check: Compact cards in 2 columns
+  - Acceptance: Tablet layout works
+
+- [ ] **Test desktop layout (1440px)**
+  - Resize browser to 1440px width
+  - All pages:
+    - Check: Content uses available space well
+    - Check: No awkward stretching or compression
+  - Acceptance: Desktop layout works
+
+#### 10.5 Accessibility
+
+- [ ] **Verify keyboard navigation**
+  - Use Tab key to navigate through all interactive elements
+  - Dashboard:
+    - Tab through compact cards
+    - Check: Focus ring visible on cards
+    - Press Enter on focused card
+    - Check: Navigation works
+  - Installations list:
+    - Tab through filter form
+    - Tab through compact cards
+    - Check: All elements reachable via keyboard
+  - Acceptance: Full keyboard support
+
+- [ ] **Verify screen reader compatibility**
+  - Run screen reader (NVDA/JAWS/VoiceOver)
+  - Dashboard:
+    - Check: Stats cards announced with label and count
+    - Check: Compact cards announced with client name and status
+  - Installations list:
+    - Check: Filter form labels announced
+    - Check: Date group headers announced
+    - Check: Cards announced with relevant info
+  - Acceptance: Screen reader navigation works
+
+- [ ] **Verify color contrast**
+  - Use browser DevTools or contrast checker
+  - Check: All text meets WCAG AA (4.5:1 for normal text)
+  - Check: Stats card colors have sufficient contrast
+  - Check: Badge colors (yellow, blue, green) have sufficient contrast
+  - Acceptance: All colors pass WCAG AA
+
+- [ ] **Verify focus indicators**
+  - Tab through all interactive elements
+  - Check: Focus ring visible on all focusable elements
+  - Check: Focus ring color contrasts with background
+  - Acceptance: Focus indicators visible
 
 ---
 
-**Phase 14 Complete When All Checklist Items Are Checked and All Tests Pass**
+## Summary
+
+### Total Estimated Time: 18-20 hours
+
+**Breakdown**:
+
+- Backend queries & tests: 3.5 hours
+- Components (InstallationCardCompact): 2 hours
+- Dashboard page: 2.5 hours
+- Installations list page: 2.5 hours
+- Detail placeholder page: 1 hour
+- E2E testing: 8.5 hours
+- Manual testing & verification: 2 hours
+
+### Key Deliverables
+
+1. **Backend**: Installer-specific query functions (today, upcoming, stats, by status)
+2. **Component**: InstallationCardCompact (reusable compact card for mobile)
+3. **Frontend**: Installer dashboard with greeting, stats, today's installations, upcoming installations
+4. **Frontend**: Installations list page with status filter and date grouping
+5. **Frontend**: Installation detail placeholder (full detail in Phase 13)
+6. **Testing**: Comprehensive unit tests for query functions
+7. **Testing**: Comprehensive E2E tests for all installer flows
+8. **Quality**: Responsive design, accessibility compliance, Spanish language
+
+### Success Criteria
+
+- All unit tests pass (100% coverage for new query functions)
+- All E2E tests pass (dashboard, list, detail, component tests)
+- Manual testing checklist complete (all items verified)
+- Code follows existing patterns (admin pages, DashboardLayout)
+- Responsive on mobile (375px), tablet (768px), desktop (1440px)
+- WCAG 2.1 AA accessibility compliance
+- Spanish language for all UI text
+- RLS policies enforce data access (installers see only their assignments)
+- Compact card component reusable for other features
+
+### Next Phase
+
+After Phase 12 completion, proceed to:
+
+- **Phase 13**: Installer Installation Detail (view full details, update status, mark completion, upload photos)
