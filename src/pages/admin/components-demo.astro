@@ -1,0 +1,123 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Input from '../../components/ui/Input.astro';
+import Textarea from '../../components/ui/Textarea.astro';
+import Select from '../../components/ui/Select.astro';
+import Checkbox from '../../components/ui/Checkbox.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Alert from '../../components/ui/Alert.astro';
+import Modal from '../../components/ui/Modal.astro';
+import StatusBadge from '../../components/installations/StatusBadge.astro';
+import EmptyState from '../../components/ui/EmptyState.astro';
+
+const user = Astro.locals.user;
+
+const selectOptions = [
+  { value: '1', label: 'Opción 1' },
+  { value: '2', label: 'Opción 2' },
+  { value: '3', label: 'Opción 3' }
+];
+---
+
+<DashboardLayout title="Demo Componentes" user={user}>
+  <h1 class="text-2xl font-bold mb-8">Demo de Componentes</h1>
+
+  <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Buttons</h2>
+    <div class="flex flex-wrap gap-4">
+      <Button variant="primary">Primary</Button>
+      <Button variant="secondary">Secondary</Button>
+      <Button variant="danger">Danger</Button>
+      <Button variant="ghost">Ghost</Button>
+      <Button variant="primary" disabled>Disabled</Button>
+    </div>
+    <div class="flex flex-wrap gap-4 mt-4">
+      <Button size="sm">Small</Button>
+      <Button size="md">Medium</Button>
+      <Button size="lg">Large</Button>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Inputs</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Input name="demo1" label="Normal" placeholder="Escribe algo..." />
+      <Input name="demo2" label="Con error" error="Este campo es requerido" />
+      <Input name="demo3" label="Deshabilitado" disabled value="No editable" />
+      <Input name="demo4" label="Con hint" hint="Este es un texto de ayuda" />
+    </div>
+  </section>
+
+  <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Textarea & Select</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Textarea name="notes" label="Notas" placeholder="Escribe tus notas..." />
+      <Select name="option" label="Selecciona" options={selectOptions} />
+    </div>
+  </section>
+
+  <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Checkbox</h2>
+    <div class="space-y-2">
+      <Checkbox name="check1" label="Opción normal" />
+      <Checkbox name="check2" label="Opción marcada" checked />
+      <Checkbox name="check3" label="Opción deshabilitada" disabled />
+    </div>
+  </section>
+
+  <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Badges</h2>
+    <div class="flex flex-wrap gap-2 mb-4">
+      <Badge variant="gray">Gray</Badge>
+      <Badge variant="blue">Blue</Badge>
+      <Badge variant="green">Green</Badge>
+      <Badge variant="yellow">Yellow</Badge>
+      <Badge variant="red">Red</Badge>
+      <Badge variant="purple">Purple</Badge>
+    </div>
+    <h3 class="font-medium mb-2">Status Badges</h3>
+    <div class="flex flex-wrap gap-2">
+      <StatusBadge status="pending" />
+      <StatusBadge status="in_progress" />
+      <StatusBadge status="completed" />
+      <StatusBadge status="cancelled" />
+    </div>
+  </section>
+
+  <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Alerts</h2>
+    <div class="space-y-4">
+      <Alert variant="info" title="Información">Este es un mensaje informativo.</Alert>
+      <Alert variant="success" title="Éxito">Operación completada correctamente.</Alert>
+      <Alert variant="warning" title="Advertencia">Ten cuidado con esta acción.</Alert>
+      <Alert variant="error" title="Error" dismissible>
+        Algo salió mal. Este se puede cerrar.
+      </Alert>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Empty State</h2>
+    <EmptyState
+      title="No hay instalaciones"
+      description="Crea tu primera instalación para empezar."
+    >
+      <Button variant="primary">Nueva Instalación</Button>
+    </EmptyState>
+  </section>
+
+  <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Modal</h2>
+    <Button onclick="openDemoModal()">Abrir Modal</Button>
+  </section>
+
+  <Modal id="demo" title="Modal de Ejemplo">
+    <p class="text-gray-600">Este es el contenido del modal. Puedes poner cualquier cosa aquí.</p>
+
+    <Fragment slot="footer">
+      <Button variant="secondary" onclick="closeDemoModal()">Cancelar</Button>
+      <Button variant="primary" onclick="closeDemoModal()">Aceptar</Button>
+    </Fragment>
+  </Modal>
+</DashboardLayout>

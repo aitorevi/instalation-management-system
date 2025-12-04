@@ -1,0 +1,135 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import InstallationCardCompact from '../../../components/installations/InstallationCardCompact.astro';
+import Button from '../../../components/ui/Button.astro';
+import Select from '../../../components/ui/Select.astro';
+import EmptyState from '../../../components/ui/EmptyState.astro';
+import { getUser } from '../../../lib/page-utils';
+import { getMyInstallations, type Installation } from '../../../lib/queries/installer';
+import type { InstallationStatus } from '../../../lib/supabase';
+
+const user = getUser(Astro);
+const accessToken = Astro.cookies.get('sb-access-token')?.value ?? '';
+
+const url = Astro.url;
+const statusFilter = url.searchParams.get('status') as InstallationStatus | null;
+
+const installations = await getMyInstallations(
+  accessToken,
+  user.id,
+  statusFilter ? { status: statusFilter } : undefined
+);
+
+function formatDateGroup(dateString: string): string {
+  const date = new Date(dateString);
+  const formatted = date.toLocaleDateString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
+function groupInstallationsByDate(installations: Installation[]): Map<string, Installation[]> {
+  const grouped = new Map<string, Installation[]>();
+
+  installations.forEach((installation) => {
+    if (!installation.scheduled_date) {
+      const key = 'Sin fecha';
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(installation);
+    } else {
+      const dateKey = installation.scheduled_date.split('T')[0];
+      if (!grouped.has(dateKey)) {
+        grouped.set(dateKey, []);
+      }
+      grouped.get(dateKey)!.push(installation);
+    }
+  });
+
+  const sortedMap = new Map(
+    Array.from(grouped.entries()).sort((a, b) => {
+      if (a[0] === 'Sin fecha') return 1;
+      if (b[0] === 'Sin fecha') return -1;
+      return a[0].localeCompare(b[0]);
+    })
+  );
+
+  return sortedMap;
+}
+
+const groupedInstallations = groupInstallationsByDate(installations);
+const pluralSuffix = installations.length !== 1 ? 'es' : '';
+
+const statusOptions = [
+  { value: '', label: 'Todos los estados' },
+  { value: 'pending', label: 'Pendiente' },
+  { value: 'in_progress', label: 'En Progreso' },
+  { value: 'completed', label: 'Completada' },
+  { value: 'cancelled', label: 'Cancelada' }
+];
+---
+
+<DashboardLayout title="Instalaciones" user={user}>
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Instalaciones</h1>
+    <p class="text-gray-600 mt-1">{installations.length} instalaci�n{pluralSuffix}</p>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <form method="get" class="flex flex-col sm:flex-row gap-4 items-end">
+      <div class="flex-1">
+        <Select name="status" label="Estado" options={statusOptions} value={statusFilter ?? ''} />
+      </div>
+      <div class="flex gap-2">
+        <Button type="submit" variant="primary">Filtrar</Button>
+        <Button type="button" variant="secondary" href="/installer/installations">Limpiar</Button>
+      </div>
+    </form>
+  </div>
+
+  {
+    installations.length === 0 ? (
+      <EmptyState
+        title={
+          statusFilter
+            ? 'No se encontraron instalaciones con este filtro'
+            : 'No tienes instalaciones asignadas'
+        }
+        description={
+          statusFilter
+            ? 'Prueba con otro filtro para ver m�s resultados.'
+            : 'Las nuevas instalaciones aparecer�n aqu� cuando sean asignadas.'
+        }
+      >
+        {statusFilter && (
+          <Button variant="primary" href="/installer/installations">
+            Ver todas
+          </Button>
+        )}
+      </EmptyState>
+    ) : (
+      <div class="space-y-8">
+        {Array.from(groupedInstallations.entries()).map(([dateKey, installationsGroup]) => (
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+              {dateKey === 'Sin fecha' ? 'Sin fecha programada' : formatDateGroup(dateKey)}
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {installationsGroup.map((installation) => (
+                <InstallationCardCompact
+                  installation={installation}
+                  href={`/installer/installations/${installation.id}`}
+                  showDate={false}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+</DashboardLayout>
