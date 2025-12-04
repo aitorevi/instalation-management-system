@@ -87,6 +87,13 @@ export function signOut(cookies: AstroCookies): void {
   cookies.delete('sb-refresh-token', { path: '/' });
 }
 
+export function clearSessionCookies(cookies: AstroCookies): void {
+  cookies.delete('sb-access-token', { path: '/' });
+  cookies.delete('sb-refresh-token', { path: '/' });
+  cookies.delete('sb-session-created', { path: '/' });
+  cookies.delete('sb-last-activity', { path: '/' });
+}
+
 export function getGoogleSignInUrl(): string {
   const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
   const redirectUrl = `${import.meta.env.PUBLIC_APP_URL}/auth/callback`;
