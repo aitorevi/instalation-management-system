@@ -1,536 +1,845 @@
-# Frontend Architecture - Phase 01: Project Setup
+# Frontend Architecture - Phase 14: PWA Setup
 
 ## Overview
 
-Phase 01 establishes the foundational frontend architecture for the IMS (Installation Management System) using Astro 5 with SSR (Server-Side Rendering) and Tailwind CSS. This phase focuses on creating a robust, performant, and maintainable foundation.
+Phase 14 implements Progressive Web App capabilities for IMS, making the application installable on devices and providing basic offline functionality. This phase focuses on creating PWA assets (manifest, icons, favicon), implementing an offline fallback page, and ensuring proper service worker registration.
 
-### Architecture Principles
+**Backend Status**: N/A (Frontend-only phase)
 
-1. **Server-First Rendering**: Astro 5 SSR mode for optimal performance and SEO
-2. **Utility-First Styling**: Tailwind CSS without `@apply` component abstractions
-3. **Type Safety**: Strict TypeScript configuration with explicit types
-4. **Component Organization**: Clear folder structure for scalability
-5. **Path Aliases**: Clean imports using TypeScript path mapping
-6. **Progressive Enhancement**: Base HTML/CSS first, JavaScript as enhancement
+**User Preferences Applied**:
 
-### Technology Stack
-
-- **Framework**: Astro 5 (SSR mode)
-- **Styling**: Tailwind CSS v3.4+ (utility-first only)
-- **Language**: TypeScript (strict mode)
-- **Package Manager**: npm
-- **Deployment**: Vercel (via @astrojs/vercel adapter)
-- **Testing**: Playwright (E2E)
-
-### Project Structure
-
-```
-ims/
-├── src/
-│   ├── components/
-│   │   ├── ui/              # Generic UI components (buttons, inputs, cards)
-│   │   ├── layout/          # Layout components (header, footer, nav)
-│   │   ├── installations/   # Installation-specific components
-│   │   └── notifications/   # Push notification components
-│   ├── layouts/             # Page layouts
-│   ├── lib/                 # Utilities and helpers
-│   ├── pages/               # File-based routing
-│   ├── types/               # TypeScript type definitions
-│   └── styles/
-│       └── global.css       # Tailwind directives + base styles
-├── public/                  # Static assets
-├── e2e/                     # Playwright E2E tests
-└── astro.config.mjs         # Astro configuration
-```
+- Simple placeholder icons with blue (#2563eb) background and 'IMS' text
+- Blue theme color (#2563eb)
+- Moderate caching strategy (network-first with cache fallback)
 
 ---
 
-## Detailed Implementation Checklist
+## Implementation Checklist
 
-### 1. Project Initialization
+### Task 1: Create Placeholder PWA Icons
 
-- [ ] **Create Astro project with minimal template**
-  - File: Root directory
-  - Command: `npm create astro@latest . -- --template minimal --typescript strict`
-  - Acceptance: Project created with TypeScript strict mode enabled
+**Files**:
 
-- [ ] **Install core dependencies**
-  - Command: `npm install @astrojs/tailwind @astrojs/vercel tailwindcss`
-  - Acceptance: All dependencies installed in `package.json`
+- `public/icons/icon-192.png` (NEW)
+- `public/icons/icon-512.png` (NEW)
+- `public/icons/apple-touch-icon.png` (NEW)
 
-- [ ] **Install development dependencies**
-  - Command: `npm install -D @playwright/test @types/node`
-  - Acceptance: Playwright and Node types available for testing
+**Objective**: Create simple placeholder icons for PWA installation and home screen.
 
-### 2. Astro Configuration
+**Implementation Steps**:
 
-- [ ] **Configure Astro for SSR with Vercel adapter**
-  - File: `astro.config.mjs`
-  - Add SSR mode: `output: 'server'`
-  - Add Vercel adapter: `adapter: vercel()`
-  - Add Tailwind integration: `integrations: [tailwind()]`
-  - Acceptance: Configuration exports valid Astro config with SSR + Vercel + Tailwind
+- [ ] Create 192x192 PNG icon
+  - Blue background (#2563eb)
+  - White 'IMS' text centered
+  - Sans-serif font, bold weight
+  - Export as `icon-192.png` to `public/icons/`
 
-- [ ] **Configure Astro Tailwind integration options**
-  - File: `astro.config.mjs`
-  - Disable default base styles: `applyBaseStyles: false`
-  - Acceptance: Tailwind integration configured to skip default base styles
+- [ ] Create 512x512 PNG icon
+  - Blue background (#2563eb)
+  - White 'IMS' text centered
+  - Sans-serif font, bold weight
+  - Larger text proportional to canvas
+  - Export as `icon-512.png` to `public/icons/`
 
-### 3. TypeScript Configuration
+- [ ] Create 180x180 Apple touch icon
+  - Blue background (#2563eb)
+  - White 'IMS' text centered
+  - Sans-serif font, bold weight
+  - Export as `apple-touch-icon.png` to `public/icons/`
 
-- [ ] **Configure TypeScript path aliases**
-  - File: `tsconfig.json`
-  - Add paths: `@/*`, `@components/*`, `@lib/*`, `@layouts/*`, `@types/*`
-  - Set baseUrl: `"baseUrl": "."`
-  - Acceptance: All path aliases resolve correctly in IDE
+**Tools**: Use any of the following:
 
-- [ ] **Verify strict TypeScript configuration**
-  - File: `tsconfig.json`
-  - Ensure strict: `"strict": true`
-  - Ensure noImplicitAny: `"noImplicitAny": true`
-  - Ensure strictNullChecks: `"strictNullChecks": true`
-  - Acceptance: TypeScript enforces strict type checking
+- Online tool: [Placeholder Image Generator](https://placeholder.com/)
+- ImageMagick CLI (if available)
+- Canvas/Figma/Any image editor
+- Node.js script with `canvas` library
 
-### 4. Tailwind CSS Configuration
+**ImageMagick Example** (if available):
 
-- [ ] **Initialize Tailwind configuration**
-  - File: `tailwind.config.mjs`
-  - Configure content paths: `['./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}']`
-  - Acceptance: Tailwind processes all source files for class detection
-
-- [ ] **Configure custom color palette**
-  - File: `tailwind.config.mjs`
-  - Add primary blue scale (50-900) in `theme.extend.colors`
-  - Reference: Use Tailwind's blue palette as base
-  - Acceptance: Custom primary colors available as `bg-primary-500`, `text-primary-700`, etc.
-
-- [ ] **Configure mobile-first responsive breakpoints**
-  - File: `tailwind.config.mjs`
-  - Verify default breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px), 2xl (1536px)
-  - Acceptance: Breakpoints follow Tailwind defaults for mobile-first design
-
-- [ ] **Document Tailwind utility-first policy**
-  - File: `tailwind.config.mjs` (comment at top)
-  - Add comment: NO @apply component classes allowed
-  - Add comment: Use utility classes directly in templates
-  - Acceptance: Clear policy documented in config file
-
-### 5. Global Styles Setup
-
-- [ ] **Create global.css with Tailwind directives**
-  - File: `src/styles/global.css`
-  - Add `@tailwind base;`
-  - Add `@tailwind components;`
-  - Add `@tailwind utilities;`
-  - Acceptance: Tailwind layers properly imported
-
-- [ ] **Add base layer styles for html element**
-  - File: `src/styles/global.css`
-  - Use `@layer base` for html styles
-  - Set font smoothing: `antialiased`
-  - Set scroll behavior: `smooth`
-  - Acceptance: Base HTML styles applied globally
-
-- [ ] **Add base layer styles for body element**
-  - File: `src/styles/global.css`
-  - Use `@layer base` for body styles
-  - Set default font: system font stack
-  - Set default colors: text and background
-  - Acceptance: Body has consistent base styling
-
-- [ ] **Verify NO component layer classes created**
-  - File: `src/styles/global.css`
-  - Ensure no `.btn`, `.card`, `.input` classes in `@layer components`
-  - Acceptance: Only base and utilities layers used, NO component abstractions
-
-### 6. Folder Structure Creation
-
-- [ ] **Create component folders**
-  - Folders:
-    - `src/components/ui/`
-    - `src/components/layout/`
-    - `src/components/installations/`
-    - `src/components/notifications/`
-  - Add `.gitkeep` file to each empty folder
-  - Acceptance: All component folders exist with `.gitkeep`
-
-- [ ] **Create layouts folder**
-  - Folder: `src/layouts/`
-  - Add `.gitkeep` file
-  - Acceptance: Layouts folder exists with `.gitkeep`
-
-- [ ] **Create lib folder**
-  - Folder: `src/lib/`
-  - Add `.gitkeep` file
-  - Acceptance: Lib folder exists with `.gitkeep`
-
-- [ ] **Create types folder**
-  - Folder: `src/types/`
-  - Add `.gitkeep` file
-  - Acceptance: Types folder exists with `.gitkeep`
-
-- [ ] **Create pages folder if not exists**
-  - Folder: `src/pages/`
-  - Acceptance: Pages folder exists (may be auto-created by Astro)
-
-### 7. Temporary Welcome Page (Spanish)
-
-- [ ] **Create temporary index.astro page**
-  - File: `src/pages/index.astro`
-  - Import global.css: `import '@/styles/global.css'`
-  - Create Spanish welcome page with Tailwind utilities
-  - Include: Page title "IMS - Installation Management System"
-  - Include: Welcome heading "Bienvenido al Sistema de Gestión de Instalaciones"
-  - Include: Description paragraph explaining the system (in Spanish)
-  - Include: Visual verification elements (colors, spacing, typography)
-  - Acceptance: Page renders in Spanish with Tailwind styling
-
-- [ ] **Add responsive design verification elements**
-  - File: `src/pages/index.astro`
-  - Add elements that change at different breakpoints (sm, md, lg)
-  - Use primary color palette in visual elements
-  - Acceptance: Page demonstrates responsive behavior
-
-### 8. Environment Configuration
-
-- [ ] **Create .env.example file**
-  - File: `.env.example`
-  - Add placeholder: `PUBLIC_SUPABASE_URL=`
-  - Add placeholder: `PUBLIC_SUPABASE_ANON_KEY=`
-  - Add placeholder: `PUBLIC_APP_URL=http://localhost:4321`
-  - Acceptance: Template for environment variables exists
-
-- [ ] **Ensure .env is in .gitignore**
-  - File: `.gitignore`
-  - Verify `.env` is listed
-  - Acceptance: Actual environment file is not committed
-
-### 9. Development Server Verification
-
-- [ ] **Start development server**
-  - Command: `npm run dev`
-  - Verify server starts on http://localhost:4321
-  - Acceptance: Dev server runs without errors
-
-- [ ] **Verify hot reload functionality**
-  - Make a minor change to `src/pages/index.astro`
-  - Verify browser updates without manual refresh
-  - Acceptance: HMR (Hot Module Replacement) works
-
-- [ ] **Verify Tailwind JIT compilation**
-  - Add a new utility class to `src/pages/index.astro`
-  - Verify styles appear immediately
-  - Acceptance: JIT compiler generates styles on-demand
-
-### 10. Build Verification
-
-- [ ] **Run production build**
-  - Command: `npm run build`
-  - Verify build completes without errors
-  - Verify output in `dist/` folder
-  - Acceptance: Production build succeeds
-
-- [ ] **Preview production build**
-  - Command: `npm run preview`
-  - Verify preview server starts
-  - Verify page renders correctly
-  - Acceptance: Production preview works as expected
-
----
-
-## Testing Infrastructure
-
-### E2E Testing Setup (Playwright)
-
-- [ ] **Initialize Playwright configuration**
-  - File: `playwright.config.ts`
-  - Configure baseURL: `http://localhost:4321`
-  - Configure test directory: `./e2e`
-  - Configure browsers: chromium, firefox, webkit
-  - Configure retries: 2 for CI, 0 for local
-  - Configure video: 'retain-on-failure'
-  - Configure screenshot: 'only-on-failure'
-  - Acceptance: Playwright configured for E2E testing
-
-- [ ] **Create E2E test folder structure**
-  - Folder: `e2e/`
-  - Add `.gitkeep` to ensure folder is tracked
-  - Acceptance: E2E folder exists
-
-- [ ] **Create setup test for development server**
-  - File: `e2e/01-setup.spec.ts`
-  - Test: Verify dev server starts successfully
-  - Test: Verify index page loads with 200 status
-  - Test: Verify page title is "IMS - Installation Management System"
-  - Test: Verify Spanish heading is visible
-  - Acceptance: Basic server and page tests pass
-
-- [ ] **Create Tailwind styling verification test**
-  - File: `e2e/02-tailwind-setup.spec.ts`
-  - Test: Verify primary color classes are applied
-  - Test: Verify responsive breakpoints work (mobile, tablet, desktop)
-  - Test: Verify typography utilities render correctly
-  - Acceptance: Tailwind utilities are functional
-
-- [ ] **Create accessibility baseline test**
-  - File: `e2e/03-accessibility.spec.ts`
-  - Install: `npm install -D @axe-core/playwright`
-  - Test: Run axe accessibility scan on index page
-  - Test: Verify no critical or serious violations
-  - Acceptance: Basic accessibility standards met
-
-- [ ] **Add test scripts to package.json**
-  - File: `package.json`
-  - Add script: `"test:e2e": "playwright test"`
-  - Add script: `"test:e2e:debug": "playwright test --ui"`
-  - Add script: `"test:e2e:headed": "playwright test --headed"`
-  - Acceptance: E2E test commands available
-
-### Test Execution
-
-- [ ] **Run all E2E tests**
-  - Command: `npm run test:e2e`
-  - Verify all tests pass
-  - Acceptance: Complete E2E test suite passes
-
-- [ ] **Verify test reporting**
-  - Check: HTML report generated in `playwright-report/`
-  - Check: Screenshots captured on failure
-  - Check: Videos captured on failure
-  - Acceptance: Test artifacts properly generated
-
----
-
-## Documentation
-
-- [ ] **Update README.md with setup instructions**
-  - File: `README.md`
-  - Add: Project description in Spanish
-  - Add: Prerequisites (Node.js version, npm)
-  - Add: Installation steps
-  - Add: Development commands
-  - Add: Testing commands
-  - Acceptance: README provides complete setup guide
-
-- [ ] **Document Tailwind utility-first approach**
-  - File: `README.md` or `workspace/frontend.md`
-  - Explain: NO @apply component classes policy
-  - Explain: How to use utility classes directly
-  - Provide: Examples of common patterns
-  - Acceptance: Utility-first approach clearly documented
-
-- [ ] **Document TypeScript path aliases**
-  - File: `README.md`
-  - List all aliases: `@/`, `@components/`, `@lib/`, `@layouts/`, `@types/`
-  - Provide examples of usage
-  - Acceptance: Path aliases documented with examples
-
----
-
-## Acceptance Criteria
-
-Phase 01 frontend setup is complete when ALL of the following are true:
-
-### 1. Project Structure
-
-- ✅ Astro 5 project initialized with minimal template
-- ✅ All required folders exist: components/{ui,layout,installations,notifications}, layouts, lib, types, e2e
-- ✅ TypeScript strict mode enabled and configured
-- ✅ Path aliases configured and working (@/, @components/, etc.)
-
-### 2. Configuration Files
-
-- ✅ `astro.config.mjs` configured with SSR mode, Vercel adapter, Tailwind integration
-- ✅ `tailwind.config.mjs` configured with content paths, primary color palette, NO @apply components
-- ✅ `tsconfig.json` configured with strict mode and path aliases
-- ✅ `playwright.config.ts` configured for E2E testing
-- ✅ `.env.example` exists with required placeholders
-
-### 3. Styling
-
-- ✅ `src/styles/global.css` exists with Tailwind directives and base styles ONLY
-- ✅ NO component layer classes created (no .btn, .card, .input)
-- ✅ Primary color palette (blue 50-900) accessible via Tailwind utilities
-- ✅ Mobile-first responsive breakpoints configured
-
-### 4. Development Environment
-
-- ✅ `npm run dev` starts server successfully at http://localhost:4321
-- ✅ Hot reload (HMR) works for Astro components
-- ✅ Tailwind JIT compilation works (new classes generate immediately)
-- ✅ TypeScript type checking works (strict mode enforced)
-
-### 5. Temporary Welcome Page
-
-- ✅ `src/pages/index.astro` exists and renders in Spanish
-- ✅ Page imports global.css and uses Tailwind utilities
-- ✅ Page demonstrates responsive design with primary colors
-- ✅ Page title is "IMS - Installation Management System"
-
-### 6. Build Process
-
-- ✅ `npm run build` completes successfully
-- ✅ `npm run preview` serves production build
-- ✅ Production build output in `dist/` folder is valid
-
-### 7. Testing Infrastructure
-
-- ✅ Playwright installed and configured
-- ✅ E2E test scripts added to package.json
-- ✅ `e2e/01-setup.spec.ts` verifies server and page load
-- ✅ `e2e/02-tailwind-setup.spec.ts` verifies Tailwind utilities
-- ✅ `e2e/03-accessibility.spec.ts` verifies basic accessibility
-- ✅ `npm run test:e2e` runs and passes all tests
-- ✅ Test artifacts (reports, screenshots, videos) generate correctly
-
-### 8. Documentation
-
-- ✅ `README.md` includes setup instructions and development commands
-- ✅ Tailwind utility-first approach documented (NO @apply policy)
-- ✅ TypeScript path aliases documented with examples
-- ✅ All configuration files include explanatory comments
-
-### 9. Code Quality
-
-- ✅ No TypeScript errors or warnings
-- ✅ No console errors in browser
-- ✅ No build warnings
-- ✅ All files use consistent formatting
-
-### 10. Version Control
-
-- ✅ `.gitignore` includes `.env`, `node_modules/`, `dist/`, etc.
-- ✅ `.env.example` committed (but not `.env`)
-- ✅ All required files committed to git
-
----
-
-## Post-Phase 01 Readiness
-
-After completing Phase 01, the project will be ready for:
-
-- **Phase 02**: Supabase integration (auth, database)
-- **Phase 03**: Layout components and routing structure
-- **Phase 04**: Authentication flow implementation
-- **Phase 05+**: Feature development (installations, installers, PWA, etc.)
-
-### Verified Capabilities
-
-The foundation will support:
-
-- Server-side rendering with Astro 5
-- Type-safe development with TypeScript strict mode
-- Utility-first styling with Tailwind CSS
-- Clean import paths with TypeScript aliases
-- E2E testing with Playwright
-- Production deployment to Vercel
-
----
-
-## Notes and Considerations
-
-### Tailwind Utility-First Philosophy
-
-This project uses **pure utility classes** in templates instead of `@apply` abstractions. This approach:
-
-- **Keeps styling visible and co-located** with markup
-- **Reduces CSS bundle size** (no duplicate utility generation)
-- **Improves debugging** (see all classes in DevTools)
-- **Follows Tailwind best practices** (v3.4+ guidance)
-
-Example pattern (DO THIS):
-
-```astro
-<button
-  class="bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors"
->
-  Guardar
-</button>
+```bash
+convert -size 192x192 xc:#2563eb -fill white -gravity center -pointsize 80 -font Arial-Bold -annotate 0 "IMS" public/icons/icon-192.png
+convert -size 512x512 xc:#2563eb -fill white -gravity center -pointsize 240 -font Arial-Bold -annotate 0 "IMS" public/icons/icon-512.png
+convert -size 180x180 xc:#2563eb -fill white -gravity center -pointsize 72 -font Arial-Bold -annotate 0 "IMS" public/icons/apple-touch-icon.png
 ```
 
-Anti-pattern (DON'T DO THIS):
+**Acceptance Criteria**:
 
-```css
-/* ❌ Avoid this in global.css */
-@layer components {
-  .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors;
-  }
+- ✅ All three PNG files exist in `public/icons/` directory
+- ✅ Icons display blue background (#2563eb)
+- ✅ Icons display white 'IMS' text
+- ✅ Icons are correctly sized (192x192, 512x512, 180x180)
+- ✅ Icons are optimized for web (no excessive file size)
+- ✅ Icons load correctly in browser (test with direct URL)
+
+**Estimated Time**: 30 minutes
+
+---
+
+### Task 2: Replace Favicon with IMS Branding
+
+**File**: `public/favicon.svg` (REPLACE)
+
+**Objective**: Replace Astro default favicon with IMS-branded SVG favicon.
+
+**Implementation Steps**:
+
+- [ ] Create new favicon.svg with IMS branding
+  - Blue rounded rectangle background (#2563eb, rounded corners)
+  - Simple house/building icon in white (represents installations)
+  - Or white 'IMS' text if icon is too complex
+  - Ensure SVG is viewable at 16x16 and 32x32 sizes
+
+**SVG Design Options**:
+
+**Option A: Building Icon**
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="20" fill="#2563eb"/>
+  <path d="M50 20 L80 45 L80 80 L20 80 L20 45 Z" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="40" y="55" width="20" height="25" fill="white" rx="2"/>
+  <circle cx="50" cy="38" r="8" fill="white"/>
+</svg>
+```
+
+**Option B: Simple IMS Text**
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="20" fill="#2563eb"/>
+  <text x="50" y="65" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white" text-anchor="middle">IMS</text>
+</svg>
+```
+
+- [ ] Replace existing `public/favicon.svg` with new design
+- [ ] Test favicon in browser (clear cache if needed)
+
+**Acceptance Criteria**:
+
+- ✅ File exists at `public/favicon.svg`
+- ✅ SVG displays correctly in browser tab
+- ✅ SVG uses blue (#2563eb) theme color
+- ✅ SVG is viewable at small sizes (16x16, 32x32)
+- ✅ SVG works in both light and dark mode browsers
+
+**Estimated Time**: 20 minutes
+
+---
+
+### Task 3: Create Web App Manifest
+
+**File**: `public/manifest.json` (NEW)
+
+**Objective**: Create PWA manifest for installability and app metadata.
+
+**Implementation Steps**:
+
+- [ ] Create `manifest.json` in `public/` directory
+- [ ] Configure manifest with following properties:
+  - `name`: "IMS - Installation Management System"
+  - `short_name`: "IMS"
+  - `description`: "Sistema de gestión de instalaciones"
+  - `start_url`: "/"
+  - `display`: "standalone"
+  - `background_color`: "#ffffff"
+  - `theme_color`: "#2563eb"
+  - `orientation`: "portrait-primary"
+  - `icons`: Array with 192x192 and 512x512 icons
+  - `categories`: ["business", "productivity"]
+  - `lang`: "es"
+  - `dir`: "ltr"
+
+**Complete Manifest**:
+
+```json
+{
+  "name": "IMS - Installation Management System",
+  "short_name": "IMS",
+  "description": "Sistema de gestión de instalaciones",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "es",
+  "dir": "ltr"
 }
 ```
 
-### Component Reusability
+**Acceptance Criteria**:
 
-Without `@apply` classes, reusability is achieved through:
+- ✅ File exists at `public/manifest.json`
+- ✅ Valid JSON syntax (no errors)
+- ✅ All required properties present
+- ✅ Icon paths are correct (`/icons/icon-192.png`, `/icons/icon-512.png`)
+- ✅ Theme color matches design system (#2563eb)
+- ✅ Display mode is "standalone"
+- ✅ Start URL is "/"
 
-1. **Astro components** - Encapsulate markup + utility classes
-2. **Shared utility patterns** - Document common class combinations
-3. **TypeScript constants** - Export class name strings if needed
+**Estimated Time**: 15 minutes
 
-### Mobile-First Responsive Design
+---
 
-All responsive styles use mobile-first approach:
+### Task 4: Create Service Worker
+
+**File**: `public/sw.js` (NEW)
+
+**Objective**: Implement service worker with moderate caching strategy (network-first with cache fallback) and offline support.
+
+**Implementation Steps**:
+
+- [ ] Create `sw.js` file in `public/` directory
+- [ ] Define cache name with version: `'ims-cache-v1'`
+- [ ] Define static assets to pre-cache:
+  - `/favicon.svg`
+  - `/manifest.json`
+  - `/icons/icon-192.png`
+  - `/icons/icon-512.png`
+- [ ] Implement install event handler
+  - Pre-cache static assets
+  - Call `self.skipWaiting()` to activate immediately
+- [ ] Implement activate event handler
+  - Delete old caches (cache cleanup)
+  - Call `self.clients.claim()` to take control
+- [ ] Implement fetch event handler
+  - **Strategy**: Network-first with cache fallback
+  - Ignore non-same-origin requests
+  - Ignore `/api/*`, `/auth/*`, and Supabase requests
+  - Attempt network fetch first
+  - On success (GET requests), update cache
+  - On network failure, serve from cache
+  - On cache miss + network failure, serve `/offline.html` for navigation requests
+- [ ] Add message event listener (for future updates)
+- [ ] Add push notification handlers (prepared for Phase 15)
+  - `push` event: Show notification with data
+  - `notificationclick` event: Open app or focus existing window
+
+**Complete Service Worker Code**: See `workspace/planning/14-PWA-SETUP.md` lines 100-253
+
+**Key Features**:
+
+- Network-first strategy (always try to get fresh content)
+- Cache fallback for offline resilience
+- Automatic cache updates on successful fetches
+- Old cache cleanup on activation
+- Prepared for push notifications (Phase 15)
+
+**Acceptance Criteria**:
+
+- ✅ File exists at `public/sw.js`
+- ✅ Valid JavaScript syntax (no errors)
+- ✅ Pre-caches static assets on install
+- ✅ Cleans up old caches on activate
+- ✅ Network-first strategy implemented correctly
+- ✅ Ignores API/auth/Supabase requests
+- ✅ Serves offline page when network and cache unavailable
+- ✅ Push notification handlers prepared (not active yet)
+
+**Estimated Time**: 1 hour
+
+---
+
+### Task 5: Create Offline Fallback Page
+
+**File**: `public/offline.html` (NEW)
+
+**Objective**: Create standalone offline page with IMS branding and user-friendly messaging.
+
+**Implementation Steps**:
+
+- [ ] Create `offline.html` in `public/` directory
+- [ ] Design standalone HTML page (no external dependencies)
+- [ ] Include inline CSS for styling (mobile-first)
+- [ ] Design layout:
+  - Centered container with gradient background (blue theme)
+  - Icon: Red circle with WiFi-off icon
+  - Heading: "Sin conexión"
+  - Message: "No tienes conexión a internet. Verifica tu conexión e intenta de nuevo."
+  - Button: "Reintentar" (calls `location.reload()`)
+- [ ] Use blue gradient background matching app theme
+- [ ] Ensure responsive design (mobile and desktop)
+- [ ] Include proper meta tags (charset, viewport)
+
+**Complete HTML Code**: See `workspace/planning/14-PWA-SETUP.md` lines 265-359
+
+**Design Features**:
+
+- Clean, minimal design
+- Blue gradient background (eff6ff to dbeafe)
+- Red icon for offline state (visual warning)
+- Clear messaging in Spanish
+- Reload button for retry action
+- Fully responsive (mobile-first)
+- No external dependencies (works offline)
+
+**Acceptance Criteria**:
+
+- ✅ File exists at `public/offline.html`
+- ✅ Valid HTML5 syntax
+- ✅ All CSS is inline (no external stylesheets)
+- ✅ All assets are inline or embedded (no external images)
+- ✅ Responsive design works on mobile and desktop
+- ✅ Reload button triggers `location.reload()`
+- ✅ Uses blue theme colors consistent with app
+- ✅ Spanish language messaging
+- ✅ Accessible (proper semantic HTML)
+
+**Estimated Time**: 30 minutes
+
+---
+
+### Task 6: Add PWA Meta Tags to BaseLayout
+
+**File**: `src/layouts/BaseLayout.astro` (MODIFY)
+
+**Objective**: Add PWA-related meta tags and manifest link to BaseLayout.
+
+**Current BaseLayout** (lines 10-18):
 
 ```astro
-<!-- Base styles = mobile, then add larger breakpoints -->
-<div class="p-4 md:p-6 lg:p-8">
-  <h1 class="text-2xl md:text-3xl lg:text-4xl">Bienvenido</h1>
-</div>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} | IMS</title>
+  </head>
+</html>
 ```
 
-### TypeScript Strict Mode
+**Implementation Steps**:
 
-All code must:
+- [ ] Add manifest link after favicon link
+- [ ] Add apple-touch-icon link
+- [ ] Verify theme-color meta tag exists (already present: #2563eb)
+- [ ] Add apple-mobile-web-app-capable meta tag
+- [ ] Add apple-mobile-web-app-status-bar-style meta tag
+- [ ] Add apple-mobile-web-app-title meta tag
 
-- Have explicit return types on functions
-- Avoid `any` type (use `unknown` or proper types)
-- Handle null/undefined with strict null checks
-- Use `??` instead of `||` for null coalescing
+**New Tags to Add**:
 
-### Performance Considerations
+```astro
+<link rel="manifest" href="/manifest.json" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="IMS" />
+```
 
-This setup prioritizes performance through:
+**Insertion Point**: After line 17 (`<link rel="icon"...`)
 
-- **SSR-first rendering** (HTML sent from server)
-- **Minimal client JavaScript** (Astro islands for interactivity)
-- **Tailwind JIT** (only used classes in production)
-- **Type-safe builds** (catch errors before deployment)
+**Acceptance Criteria**:
 
----
+- ✅ Manifest link points to `/manifest.json`
+- ✅ Apple touch icon link points to `/icons/apple-touch-icon.png`
+- ✅ Theme color meta tag is #2563eb (already exists)
+- ✅ Apple web app meta tags added
+- ✅ No TypeScript errors
+- ✅ All tags in correct order (meta tags before links)
 
-## Timeline Estimate
-
-Total estimated time: **8-12 hours**
-
-Breakdown:
-
-- Project initialization: 1-2 hours
-- Configuration (Astro, TypeScript, Tailwind): 2-3 hours
-- Folder structure + global styles: 1 hour
-- Temporary welcome page: 1-2 hours
-- Testing infrastructure setup: 2-3 hours
-- Documentation: 1-2 hours
-
-**Note**: Times assume familiarity with Astro 5, Tailwind CSS, and Playwright. First-time setup may take longer.
+**Estimated Time**: 10 minutes
 
 ---
 
-## Risk Mitigation
+### Task 7: Add Service Worker Registration to BaseLayout
 
-### Potential Issues
+**File**: `src/layouts/BaseLayout.astro` (MODIFY)
 
-1. **Astro 5 breaking changes**: Verify compatibility with latest version
-2. **Tailwind CSS purging issues**: Ensure content paths are correct
-3. **TypeScript path alias resolution**: Verify in both IDE and build
-4. **Playwright browser dependencies**: May require system-level installations
+**Objective**: Add service worker registration script to BaseLayout.
 
-### Mitigation Strategies
+**Implementation Steps**:
 
-- Test each configuration step immediately after implementation
-- Run `npm run build` frequently to catch issues early
-- Keep Playwright and Astro dependencies up to date
-- Document any version-specific quirks or workarounds
+- [ ] Add `<script>` tag after closing `</body>` tag (or at end of body)
+- [ ] Check for service worker support (`'serviceWorker' in navigator`)
+- [ ] Register service worker on window load event
+- [ ] Use `/sw.js` path for registration
+- [ ] Log success and error to console
+- [ ] Wrap in `is:inline` attribute to prevent Vite processing
+
+**Registration Script**:
+
+```astro
+<!-- Service Worker Registration -->
+<script is:inline>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((registration) => {
+          console.log('[SW] Registered successfully:', registration.scope);
+        })
+        .catch((error) => {
+          console.error('[SW] Registration failed:', error);
+        });
+    });
+  }
+</script>
+```
+
+**Insertion Point**: Before closing `</body>` tag (after `<slot />`)
+
+**Key Points**:
+
+- Use `is:inline` to prevent Vite from processing the script
+- Register on `load` event to avoid blocking initial page load
+- Feature detection for service worker support
+- Console logging for debugging
+
+**Acceptance Criteria**:
+
+- ✅ Script tag added to BaseLayout
+- ✅ Uses `is:inline` attribute
+- ✅ Feature detection for service worker support
+- ✅ Registers on window load event
+- ✅ Logs success/error to console
+- ✅ Service worker path is `/sw.js`
+- ✅ No JavaScript errors in console
+
+**Estimated Time**: 10 minutes
 
 ---
 
-**Phase 01 establishes a solid, performant, and type-safe foundation for the IMS application. All subsequent phases build upon this infrastructure.**
+### Task 8: Verify PWA Meta Tags in Other Layouts
+
+**Files**:
+
+- `src/layouts/DashboardLayout.astro` (CHECK)
+- `src/layouts/AuthLayout.astro` (CHECK)
+
+**Objective**: Ensure PWA meta tags are inherited from BaseLayout (or add if needed).
+
+**Implementation Steps**:
+
+- [ ] Review DashboardLayout.astro
+  - Verify it wraps content with `<BaseLayout>`
+  - If not, add manifest and icon links to `<head>`
+- [ ] Review AuthLayout.astro
+  - Verify it wraps content with `<BaseLayout>`
+  - If not, add manifest and icon links to `<head>`
+- [ ] Confirm all layouts inherit PWA capabilities
+
+**Current Layout Structure**:
+
+- `DashboardLayout.astro` → Uses `<BaseLayout>` (line 14)
+- `AuthLayout.astro` → Does NOT use `<BaseLayout>` (standalone HTML)
+
+**For AuthLayout.astro** (lines 10-16), add same meta tags as BaseLayout:
+
+```astro
+<meta name="theme-color" content="#2563eb" />
+<link rel="manifest" href="/manifest.json" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="IMS" />
+```
+
+**Also add service worker registration script** to AuthLayout before `</body>`.
+
+**Acceptance Criteria**:
+
+- ✅ DashboardLayout inherits PWA meta tags from BaseLayout
+- ✅ AuthLayout has PWA meta tags added directly
+- ✅ AuthLayout has service worker registration script
+- ✅ All layouts support PWA installation
+- ✅ No duplicate meta tags
+- ✅ No TypeScript errors
+
+**Estimated Time**: 20 minutes
+
+---
+
+## Testing Checklist
+
+### Manual Testing: PWA Installation
+
+- [ ] **Test 1: Verify Manifest in DevTools**
+  - Open Chrome DevTools (F12)
+  - Navigate to Application → Manifest
+  - Expected: Manifest data displayed correctly (name, icons, theme color)
+  - Expected: No errors or warnings
+
+- [ ] **Test 2: Verify Service Worker Registration**
+  - In DevTools → Application → Service Workers
+  - Expected: Service worker status "activated and is running"
+  - Expected: Scope is "/" (root)
+  - Console log: "[SW] Registered successfully"
+
+- [ ] **Test 3: Verify Static Asset Caching**
+  - In DevTools → Application → Cache Storage
+  - Expected: Cache named "ims-cache-v1" exists
+  - Expected: Cache contains: favicon.svg, manifest.json, icon-192.png, icon-512.png
+  - Clear cache and reload → Cache repopulates
+
+- [ ] **Test 4: Check PWA Installability**
+  - In Chrome, check address bar for install icon
+  - OR DevTools → Application → Manifest → "Installability" section
+  - Expected: "Installable" or "No installability issues detected"
+  - Expected: Install prompt available
+
+- [ ] **Test 5: Install PWA on Desktop**
+  - Click install icon in address bar
+  - OR Chrome menu → "Install IMS..."
+  - Expected: Installation dialog appears
+  - Expected: App icon and name shown correctly
+  - Click "Install"
+  - Expected: PWA opens in standalone window
+  - Expected: PWA appears in OS app launcher
+
+- [ ] **Test 6: Install PWA on Mobile (iOS)**
+  - Open app in Safari on iOS
+  - Tap Share button → "Add to Home Screen"
+  - Expected: Icon preview shows apple-touch-icon
+  - Expected: Name shows "IMS"
+  - Add to home screen
+  - Expected: Icon appears on home screen
+  - Tap icon → Expected: App opens in standalone mode
+
+- [ ] **Test 7: Install PWA on Mobile (Android)**
+  - Open app in Chrome on Android
+  - Tap menu (three dots) → "Install app" or "Add to Home screen"
+  - Expected: Installation dialog with app name and icon
+  - Install app
+  - Expected: Icon appears on home screen
+  - Tap icon → Expected: App opens in standalone mode
+
+### Manual Testing: Offline Functionality
+
+- [ ] **Test 8: Test Offline Page**
+  - Open DevTools → Network tab
+  - Enable "Offline" mode
+  - Navigate to new page (e.g., type random URL)
+  - Expected: `offline.html` page loads
+  - Expected: "Sin conexión" heading visible
+  - Expected: "Reintentar" button visible
+  - Click "Reintentar" → Expected: Page attempts reload
+
+- [ ] **Test 9: Test Network-First Caching**
+  - Visit a page with service worker active
+  - Open DevTools → Network tab
+  - Disable cache in DevTools (checkbox)
+  - Reload page → Expected: Network request made
+  - Check Cache Storage → Expected: Page cached after successful fetch
+  - Enable "Offline" mode
+  - Reload page → Expected: Cached version served
+
+- [ ] **Test 10: Test Cache Update on Network Success**
+  - Clear cache in DevTools
+  - Visit page (online) → Expected: Network request + cache update
+  - Check Cache Storage → Expected: Page in cache
+  - Modify page content on server (if possible)
+  - Reload page (online) → Expected: New content fetched and cached
+
+- [ ] **Test 11: Verify API Requests Not Cached**
+  - Open DevTools → Network tab
+  - Perform action that calls `/api/*` or Supabase
+  - Enable "Offline" mode
+  - Retry API call → Expected: Network error (not served from cache)
+  - Check Cache Storage → Expected: API responses NOT in cache
+
+### Manual Testing: Service Worker Updates
+
+- [ ] **Test 12: Test Service Worker Update**
+  - Modify `sw.js` (change CACHE_NAME to 'ims-cache-v2')
+  - Reload page in browser
+  - DevTools → Application → Service Workers
+  - Expected: New service worker "waiting to activate"
+  - Close all app tabs/windows
+  - Reopen app → Expected: New service worker activated
+  - Check Cache Storage → Expected: Old cache deleted, new cache created
+
+- [ ] **Test 13: Test skipWaiting Message**
+  - Modify `sw.js` again (version v3)
+  - Reload page
+  - Open console
+  - Run: `navigator.serviceWorker.controller.postMessage({type: 'SKIP_WAITING'})`
+  - Expected: New service worker activates immediately
+  - Expected: Page reloads with new service worker
+
+### Visual Testing
+
+- [ ] **Test 14: Verify Favicon Display**
+  - Open app in browser
+  - Check browser tab → Expected: IMS favicon visible
+  - Check in both light and dark mode
+  - Check on mobile browser
+
+- [ ] **Test 15: Verify Theme Color**
+  - Open app in Chrome on Android
+  - Expected: Address bar color is blue (#2563eb)
+  - Scroll down → Expected: Theme color persists
+
+- [ ] **Test 16: Verify Installed App Icon**
+  - After installation, check app icon on home screen
+  - Expected: Blue icon with 'IMS' text
+  - Expected: Icon is not pixelated or blurry
+
+- [ ] **Test 17: Verify Splash Screen (Android)**
+  - Install PWA on Android
+  - Close app completely
+  - Reopen app from home screen
+  - Expected: Brief splash screen with IMS icon and blue background
+  - Expected: Splash screen matches theme color
+
+### Cross-Browser Testing
+
+- [ ] **Test 18: Test in Chrome Desktop**
+  - All features work as expected
+  - PWA installable
+  - Service worker registers
+  - Offline page works
+
+- [ ] **Test 19: Test in Edge Desktop**
+  - All features work as expected
+  - PWA installable
+  - Service worker registers
+
+- [ ] **Test 20: Test in Safari Desktop (macOS)**
+  - Service worker support (Safari 11.1+)
+  - Manifest support (Safari 15+)
+  - Install via menu (limited support)
+
+- [ ] **Test 21: Test in Chrome Mobile (Android)**
+  - Install banner appears
+  - PWA installs correctly
+  - Standalone mode works
+  - Theme color applies
+
+- [ ] **Test 22: Test in Safari Mobile (iOS)**
+  - Add to Home Screen works
+  - Apple touch icon displays
+  - Standalone mode works
+  - Status bar styling correct
+
+### Lighthouse PWA Audit
+
+- [ ] **Test 23: Run Lighthouse PWA Audit**
+  - Open DevTools → Lighthouse
+  - Select "Progressive Web App" category
+  - Run audit (mobile or desktop)
+  - Expected: Score ≥ 90/100
+  - Expected: All core PWA checks pass:
+    - ✅ Registers a service worker
+    - ✅ Responds with 200 when offline
+    - ✅ Has a web app manifest
+    - ✅ Uses HTTPS (in production)
+    - ✅ Redirects HTTP to HTTPS (in production)
+    - ✅ Configured for a custom splash screen
+    - ✅ Sets a theme color
+    - ✅ Provides valid apple-touch-icon
+  - Review any warnings or failures
+  - Fix issues and re-run audit
+
+---
+
+## Acceptance Criteria Summary
+
+### Asset Creation
+
+- ✅ Three PWA icons created and optimized (192x192, 512x512, 180x180)
+- ✅ Favicon replaced with IMS branding
+- ✅ All icons use blue (#2563eb) theme color
+- ✅ All icons display 'IMS' branding
+- ✅ All assets load correctly in browser
+
+### Configuration
+
+- ✅ Web app manifest created and valid
+- ✅ Manifest properly configured with app metadata
+- ✅ Manifest references correct icon paths
+- ✅ Theme color is #2563eb throughout
+
+### Service Worker
+
+- ✅ Service worker implemented with network-first strategy
+- ✅ Service worker pre-caches static assets
+- ✅ Service worker cleans up old caches
+- ✅ Service worker ignores API/auth requests
+- ✅ Service worker serves offline page when needed
+- ✅ Push notification handlers prepared (inactive)
+
+### Offline Page
+
+- ✅ Offline page created with IMS branding
+- ✅ Offline page is standalone (no external dependencies)
+- ✅ Offline page is responsive
+- ✅ Offline page has retry button
+
+### Layout Integration
+
+- ✅ BaseLayout includes PWA meta tags
+- ✅ BaseLayout includes manifest link
+- ✅ BaseLayout includes service worker registration
+- ✅ AuthLayout includes PWA meta tags (standalone layout)
+- ✅ DashboardLayout inherits from BaseLayout (no changes needed)
+
+### Installation
+
+- ✅ PWA is installable in Chrome/Edge desktop
+- ✅ PWA is installable in Safari iOS
+- ✅ PWA is installable in Chrome Android
+- ✅ Install prompt appears automatically (Chrome Android)
+- ✅ Installed app opens in standalone mode
+- ✅ Installed app icon displays correctly
+
+### Offline Functionality
+
+- ✅ App serves cached pages when offline
+- ✅ App shows offline page for uncached navigation
+- ✅ App updates cache on successful network requests
+- ✅ API requests bypass cache (always network)
+
+### Testing
+
+- ✅ All manual tests pass
+- ✅ Lighthouse PWA audit score ≥ 90/100
+- ✅ Cross-browser testing completed
+- ✅ Mobile testing completed (iOS and Android)
+
+---
+
+## File Structure
+
+```
+public/
+├── icons/
+│   ├── icon-192.png          # NEW - 192x192 PWA icon
+│   ├── icon-512.png          # NEW - 512x512 PWA icon
+│   └── apple-touch-icon.png  # NEW - 180x180 Apple icon
+├── favicon.svg               # MODIFIED - IMS branded favicon
+├── manifest.json             # NEW - Web app manifest
+├── sw.js                     # NEW - Service worker
+└── offline.html              # NEW - Offline fallback page
+
+src/layouts/
+├── BaseLayout.astro          # MODIFIED - Add PWA meta tags + SW registration
+└── AuthLayout.astro          # MODIFIED - Add PWA meta tags + SW registration
+```
+
+---
+
+## Implementation Notes
+
+### Icon Design Philosophy
+
+- **Simplicity**: Placeholder icons use simple text to avoid design complexity
+- **Branding**: Blue (#2563eb) aligns with app theme color
+- **Recognizability**: 'IMS' text is clear and readable at all sizes
+- **Future**: Can be replaced with professional icons later without code changes
+
+### Caching Strategy Rationale
+
+- **Network-First**: Prioritizes fresh content when online
+- **Cache Fallback**: Ensures resilience when offline
+- **Moderate**: Balances performance and data freshness
+- **API Exclusion**: Auth and database requests always use network
+
+### Service Worker Lifecycle
+
+1. **Install**: Pre-cache static assets
+2. **Activate**: Clean up old caches, take control of pages
+3. **Fetch**: Intercept requests, apply caching strategy
+4. **Update**: New SW version waits for old version to release, then activates
+
+### Offline Strategy
+
+- **Static Assets**: Always cached (icons, manifest, favicon)
+- **Pages**: Cached after first visit (network-first)
+- **API Requests**: Never cached (always network)
+- **Uncached Pages**: Show offline.html fallback
+
+### iOS Considerations
+
+- Safari has limited PWA support (no install banner)
+- Requires "Add to Home Screen" manual action
+- Uses apple-touch-icon for home screen icon
+- Meta tags control status bar and standalone mode
+
+### Android Considerations
+
+- Chrome shows automatic install banner (if criteria met)
+- Splash screen generated from manifest
+- Theme color applies to status bar and address bar
+- Better PWA support than iOS
+
+### Testing Strategy
+
+- **Manual Testing**: Covers all user-facing functionality
+- **DevTools**: Verify technical implementation
+- **Lighthouse**: Automated PWA audit
+- **Cross-Browser**: Ensure compatibility
+- **Cross-Platform**: Mobile and desktop testing
+
+### Future Enhancements (Phase 15+)
+
+- Push notifications (handlers already prepared in SW)
+- Background sync for offline actions
+- Advanced caching strategies (cache-first for static, network-first for dynamic)
+- Update notifications for new SW versions
+- Professional icon design
+
+---
+
+## Troubleshooting
+
+### Service Worker Not Registering
+
+- Check console for errors
+- Ensure `/sw.js` is accessible (200 response)
+- Verify HTTPS in production (localhost OK for development)
+- Clear browser cache and reload
+- Check DevTools → Application → Service Workers for errors
+
+### PWA Not Installable
+
+- Run Lighthouse audit to identify issues
+- Verify manifest is valid JSON
+- Ensure all manifest icons exist and are accessible
+- Check that start_url is valid
+- Ensure HTTPS in production
+- Check DevTools → Application → Manifest for errors
+
+### Offline Page Not Showing
+
+- Verify `offline.html` exists in `public/`
+- Check service worker fetch handler logic
+- Test with DevTools offline mode
+- Clear cache and re-register service worker
+- Check network tab for offline.html request
+
+### Icons Not Displaying
+
+- Verify icon files exist in `public/icons/`
+- Check file names match manifest exactly
+- Clear browser cache
+- Test icon URLs directly in browser
+- Check file sizes (not too large)
+
+### Cache Not Updating
+
+- Check cache name in service worker
+- Verify old caches are being deleted in activate event
+- Force update service worker in DevTools
+- Clear cache manually in DevTools
+- Check network tab for cache hits/misses
+
+---
+
+**Phase 14 Complete When All Checklist Items Are Checked and All Tests Pass**

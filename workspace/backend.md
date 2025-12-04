@@ -1,1392 +1,870 @@
-# Backend Architecture - Phase 01: Project Setup
+# Phase 14: PWA Setup - Backend Implementation Checklist
 
 ## Overview
 
-Phase 01 establishes the foundational backend infrastructure for the IMS (Installation Management System). This phase focuses on creating a production-ready development environment with proper tooling, configuration, and testing infrastructure.
+This checklist contains all backend-related tasks for Phase 14: PWA Setup. This phase is primarily client-side focused (service worker, manifest) with minimal backend requirements.
 
-**What we're building in this phase:**
+**Key Points:**
 
-- **Astro 5 SSR Application**: Server-side rendering with Vercel adapter for optimal performance and SEO
-- **Supabase Client Setup**: Foundation for PostgreSQL database, authentication, and Edge Functions
-- **Development Tooling**: TypeScript strict mode, ESLint, Prettier, and comprehensive testing infrastructure
-- **Environment Management**: Secure configuration for local development and production deployment
-- **Testing Foundation**: Vitest for unit/integration tests, Playwright for E2E tests
-
-**What we're NOT building yet:**
-
-- Database schema (Phase 02)
-- Authentication implementation (Phases 03-06)
-- API endpoints or Edge Functions (future phases)
-- Business logic or domain models (future phases)
-
-**Key Architecture Decisions:**
-
-1. **SSR over SPA**: Server-side rendering provides better SEO, faster initial page loads, and secure server-side operations
-2. **Utility-first Tailwind**: NO @apply classes for components (per user preference) - all styling via utility classes
-3. **Strict TypeScript**: Maximum type safety to catch errors at compile time
-4. **Test-Driven Infrastructure**: Comprehensive test setup from the start (unit, integration, E2E)
-5. **Supabase Serverless**: Edge Functions (Deno runtime) + PostgreSQL with RLS for security
+- No database migrations required
+- No Edge Functions required
+- No RLS policy changes
+- Service worker runs client-side (browser context)
+- Static assets served via Vercel/Astro
+- Estimated total time: 6-9 hours
 
 ---
 
-## Detailed Implementation Checklist
+## Task 1: Create Icon Assets (1-2 hours)
 
-### 1. Project Initialization
+### Description
 
-#### 1.1 Create Astro Project
+Create placeholder PWA icons (192x192, 512x512, 180x180) with blue background and white "IMS" text.
 
-- [ ] Run `npm create astro@latest ims -- --template minimal --typescript strict --git --install`
-- [ ] Navigate to project: `cd ims`
-- [ ] Verify `package.json` exists with Astro dependencies
+### Steps
 
-**Acceptance Criteria:**
+- [ ] Create directory `public/icons/` (if not exists)
+- [ ] Generate or create `icon-192.png` (192x192 px, blue #2563eb, white "IMS" text)
+  - Use online tool: https://favicon.io/favicon-generator/
+  - Settings: Blue background (#2563eb), white text "IMS", sans-serif font
+  - Or use ImageMagick: `convert -size 192x192 xc:#2563eb -fill white -gravity center -pointsize 80 -annotate 0 "IMS" public/icons/icon-192.png`
+- [ ] Generate or create `icon-512.png` (512x512 px, blue #2563eb, white "IMS" text)
+  - Same process as 192x192 but larger
+  - ImageMagick: `convert -size 512x512 xc:#2563eb -fill white -gravity center -pointsize 200 -annotate 0 "IMS" public/icons/icon-512.png`
+- [ ] Generate or create `apple-touch-icon.png` (180x180 px, blue #2563eb, white "IMS" text)
+  - Required for iOS "Add to Home Screen"
+  - ImageMagick: `convert -size 180x180 xc:#2563eb -fill white -gravity center -pointsize 70 -annotate 0 "IMS" public/icons/apple-touch-icon.png`
+- [ ] Verify all icons load in browser (open http://localhost:4321/icons/icon-192.png)
+- [ ] Verify file sizes are reasonable (<50KB each for placeholders)
 
-- Project folder `ims/` exists
-- `package.json` has `astro` in dependencies
-- Git repository initialized (`.git/` folder exists)
-- TypeScript configured in strict mode (`tsconfig.json` has `"strict": true`)
+### Testing
 
-**Files Created:**
-
-- `/package.json`
-- `/tsconfig.json`
-- `/astro.config.mjs`
-- `/src/pages/index.astro` (default)
-- `/.gitignore`
-
----
-
-#### 1.2 Install Core Dependencies
-
-- [ ] Install Astro integrations: `npm install @astrojs/tailwind @astrojs/vercel`
-- [ ] Install styling: `npm install tailwindcss`
-- [ ] Install Supabase client: `npm install @supabase/supabase-js`
-- [ ] Verify all 4 packages in `package.json` dependencies
-
-**Acceptance Criteria:**
-
-- `package.json` contains:
-  - `@astrojs/tailwind`
-  - `@astrojs/vercel`
-  - `tailwindcss`
-  - `@supabase/supabase-js`
-- `node_modules/` folder populated
-- No installation errors in terminal
-
----
-
-#### 1.3 Install Development Dependencies
-
-- [ ] Install testing framework: `npm install -D vitest @vitest/ui`
-- [ ] Install Playwright for E2E: `npm install -D @playwright/test`
-- [ ] Install code quality tools: `npm install -D eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin`
-- [ ] Install Prettier: `npm install -D prettier prettier-plugin-astro`
-- [ ] Install Husky for git hooks: `npm install -D husky lint-staged`
-- [ ] Install type utilities: `npm install -D @types/node`
-
-**Acceptance Criteria:**
-
-- All dev dependencies in `package.json` under `devDependencies`
-- ESLint and Prettier ready for configuration
-- Testing frameworks installed but not yet configured
-
-**Files Modified:**
-
-- `/package.json` (devDependencies section)
-
----
-
-### 2. Configuration Files
-
-#### 2.1 Configure Astro
-
-- [ ] Create/modify `astro.config.mjs` with SSR mode, Vercel adapter, and Tailwind integration
-- [ ] Set `output: 'server'` for SSR
-- [ ] Add `adapter: vercel()` for deployment
-- [ ] Add `integrations: [tailwind()]`
-
-**File:** `/astro.config.mjs`
-
-```javascript
-import { defineConfig } from 'astro/config';
-import tailwind from '@astrojs/tailwind';
-import vercel from '@astrojs/vercel/serverless';
-
-export default defineConfig({
-  output: 'server',
-  adapter: vercel(),
-  integrations: [tailwind()],
-  vite: {
-    test: {
-      environment: 'node',
-      globals: true
-    }
-  }
-});
+```bash
+npm run dev
+# Open in browser:
+# - http://localhost:4321/icons/icon-192.png (should display blue icon with "IMS")
+# - http://localhost:4321/icons/icon-512.png (should display blue icon with "IMS")
+# - http://localhost:4321/icons/apple-touch-icon.png (should display blue icon with "IMS")
 ```
 
-**Acceptance Criteria:**
+### Acceptance Criteria
 
-- File exists in project root
-- SSR mode enabled (`output: 'server'`)
-- Vercel adapter configured
-- Tailwind integration active
-- Vite test configuration included for Vitest
-
----
-
-#### 2.2 Configure Tailwind
-
-- [ ] Create `tailwind.config.mjs` in project root
-- [ ] Configure content paths for Astro files
-- [ ] Add primary color palette (blue theme)
-- [ ] NO component classes with @apply (per user preference)
-
-**File:** `/tailwind.config.mjs`
-
-```javascript
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: ['./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}'],
-  theme: {
-    extend: {
-      colors: {
-        primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554'
-        }
-      }
-    }
-  },
-  plugins: []
-};
-```
-
-**Acceptance Criteria:**
-
-- File exists in project root
-- Content paths include all Astro file types
-- Primary color palette defined (blue)
-- No custom plugins configured yet
+- ✅ All 3 icon files exist in `public/icons/`
+- ✅ Icons are accessible via browser at `/icons/icon-*.png`
+- ✅ Icons display correctly with blue background (#2563eb) and white "IMS" text
+- ✅ File sizes under 50KB each (placeholder quality)
+- ✅ No 404 errors when accessing icons
 
 ---
 
-#### 2.3 Configure TypeScript Path Aliases
+## Task 2: Create Web App Manifest (30 minutes)
 
-- [ ] Modify `tsconfig.json` to add path aliases
-- [ ] Add aliases: `@/*`, `@components/*`, `@lib/*`, `@layouts/*`, `@types/*`
+### Description
 
-**File:** `/tsconfig.json`
+Create `manifest.json` defining PWA metadata (name, icons, colors, display mode).
 
-Modify the `compilerOptions` section to include:
+### Steps
 
-```json
-{
-  "extends": "astro/tsconfigs/strict",
-  "compilerOptions": {
-    "strict": true,
-    "strictNullChecks": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@lib/*": ["src/lib/*"],
-      "@layouts/*": ["src/layouts/*"],
-      "@types/*": ["src/types/*"]
-    }
-  }
-}
-```
-
-**Acceptance Criteria:**
-
-- Strict mode enabled
-- Path aliases configured
-- TypeScript can resolve imports like `import { X } from '@lib/utils'`
-
----
-
-#### 2.4 Create ESLint Configuration
-
-- [ ] Create `.eslintrc.cjs` in project root
-- [ ] Configure TypeScript parser
-- [ ] Add Astro-specific rules
-- [ ] Set up recommended rulesets
-
-**File:** `/.eslintrc.cjs`
-
-```javascript
-module.exports = {
-  parser: '@typescript-eslint/parser',
-  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module'
-  },
-  env: {
-    node: true,
-    es2022: true,
-    browser: true
-  },
-  overrides: [
-    {
-      files: ['*.astro'],
-      parser: 'astro-eslint-parser',
-      parserOptions: {
-        parser: '@typescript-eslint/parser',
-        extraFileExtensions: ['.astro']
-      }
-    }
-  ],
-  rules: {
-    '@typescript-eslint/no-unused-vars': [
-      'error',
+- [ ] Create file `public/manifest.json`
+- [ ] Add all required manifest fields:
+  ```json
+  {
+    "name": "IMS - Installation Management System",
+    "short_name": "IMS",
+    "description": "Sistema de gestión de instalaciones",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#2563eb",
+    "orientation": "portrait-primary",
+    "icons": [
       {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_'
+        "src": "/icons/icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any maskable"
+      },
+      {
+        "src": "/icons/icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
       }
-    ]
+    ],
+    "categories": ["business", "productivity"],
+    "lang": "es",
+    "dir": "ltr"
   }
-};
-```
+  ```
+- [ ] Verify JSON syntax (no trailing commas, valid JSON)
+- [ ] Verify manifest loads at http://localhost:4321/manifest.json
+- [ ] Validate JSON with https://jsonlint.com/
 
-**Acceptance Criteria:**
-
-- File exists in project root
-- TypeScript parser configured
-- Astro files handled via overrides
-- Unused variables rule configured
-
----
-
-#### 2.5 Create Prettier Configuration
-
-- [ ] Create `.prettierrc.cjs` in project root
-- [ ] Configure Astro plugin
-- [ ] Set code formatting standards
-
-**File:** `/.prettierrc.cjs`
-
-```javascript
-module.exports = {
-  semi: true,
-  singleQuote: true,
-  tabWidth: 2,
-  trailingComma: 'es5',
-  printWidth: 100,
-  plugins: ['prettier-plugin-astro'],
-  overrides: [
-    {
-      files: '*.astro',
-      options: {
-        parser: 'astro'
-      }
-    }
-  ]
-};
-```
-
-**Acceptance Criteria:**
-
-- File exists in project root
-- Astro plugin configured
-- Consistent formatting rules defined
-
----
-
-#### 2.6 Configure Vitest
-
-- [ ] Create `vitest.config.ts` in project root
-- [ ] Configure test environment (node)
-- [ ] Set up coverage reporting
-- [ ] Exclude integration tests from unit test runs
-
-**File:** `/vitest.config.ts`
-
-```typescript
-import { defineConfig } from 'vitest/config';
-import path from 'path';
-
-export default defineConfig({
-  test: {
-    environment: 'node',
-    globals: true,
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'dist/',
-        '**/*.integration.test.ts',
-        '**/*.spec.ts',
-        'e2e/',
-        '.astro/'
-      ]
-    },
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/.astro/**',
-      '**/*.integration.test.ts',
-      'e2e/**'
-    ]
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@components': path.resolve(__dirname, './src/components'),
-      '@lib': path.resolve(__dirname, './src/lib'),
-      '@layouts': path.resolve(__dirname, './src/layouts'),
-      '@types': path.resolve(__dirname, './src/types')
-    }
-  }
-});
-```
-
-**Acceptance Criteria:**
-
-- File exists in project root
-- Coverage reporting configured
-- Integration tests excluded from unit tests
-- Path aliases work in tests
-
----
-
-#### 2.7 Configure Playwright
-
-- [ ] Run Playwright init: `npx playwright install`
-- [ ] Create `playwright.config.ts` in project root
-- [ ] Configure base URL for local dev
-- [ ] Set up browser contexts (chromium, firefox, webkit)
-
-**File:** `/playwright.config.ts`
-
-```typescript
-import { defineConfig, devices } from '@playwright/test';
-
-export default defineConfig({
-  testDir: './e2e',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
-  use: {
-    baseURL: 'http://localhost:4321',
-    trace: 'on-first-retry'
-  },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] }
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] }
-    }
-  ],
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:4321',
-    reuseExistingServer: !process.env.CI
-  }
-});
-```
-
-**Acceptance Criteria:**
-
-- File exists in project root
-- Base URL points to local dev server
-- Multiple browser configurations
-- Web server auto-starts for E2E tests
-
----
-
-### 3. Environment and Security
-
-#### 3.1 Create Environment Template
-
-- [ ] Create `.env.example` in project root
-- [ ] Add Supabase placeholders (URL, anon key)
-- [ ] Add app URL placeholder
-- [ ] Add VAPID keys placeholders for push notifications
-- [ ] Add helpful comments for each variable
-
-**File:** `/.env.example`
-
-```env
-# Supabase Configuration
-# Get these from: Supabase Dashboard > Settings > API
-PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-
-# Application URL
-# Local development
-PUBLIC_APP_URL=http://localhost:4321
-
-# Push Notifications (VAPID Keys)
-# Generate with: npx web-push generate-vapid-keys
-PUBLIC_VAPID_PUBLIC_KEY=
-VAPID_PRIVATE_KEY=
-VAPID_SUBJECT=mailto:admin@example.com
-```
-
-**Acceptance Criteria:**
-
-- File exists in project root
-- All required variables documented
-- Comments explain where to get values
-- File is tracked in git (not .env itself)
-
----
-
-#### 3.2 Update .gitignore
-
-- [ ] Ensure `.env` is ignored (not `.env.example`)
-- [ ] Add build output directories
-- [ ] Add editor and OS-specific files
-- [ ] Add test coverage reports
-
-**File:** `/.gitignore`
-
-Ensure these entries exist:
-
-```
-# Dependencies
-node_modules/
-
-# Build outputs
-dist/
-.vercel/
-.astro/
-
-# Environment variables (DO NOT COMMIT)
-.env
-.env.local
-.env.*.local
-
-# Testing
-coverage/
-.nyc_output/
-test-results/
-playwright-report/
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-*.swn
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-```
-
-**Acceptance Criteria:**
-
-- `.env` is ignored but `.env.example` is NOT ignored
-- Build directories ignored
-- Coverage reports ignored
-- Editor/OS files ignored
-
----
-
-### 4. Project Structure
-
-#### 4.1 Create Folder Structure
-
-- [ ] Create component folders: `src/components/ui`, `src/components/layout`, `src/components/installations`, `src/components/notifications`
-- [ ] Create layout folder: `src/layouts`
-- [ ] Create lib folder: `src/lib`
-- [ ] Create middleware folder: `src/middleware`
-- [ ] Create types folder: `src/types`
-- [ ] Create page folders: `src/pages/auth`, `src/pages/admin/installations`, `src/pages/admin/installers`, `src/pages/installer/installations`
-- [ ] Create Supabase folders: `supabase/migrations`, `supabase/functions`
-- [ ] Create E2E test folder: `e2e/`
-- [ ] Create public assets folder: `public/icons`
-
-**Commands:**
+### Testing
 
 ```bash
-# Component folders
-mkdir -p src/components/ui
-mkdir -p src/components/layout
-mkdir -p src/components/installations
-mkdir -p src/components/notifications
-
-# Core folders
-mkdir -p src/layouts
-mkdir -p src/lib
-mkdir -p src/middleware
-mkdir -p src/types
-mkdir -p src/styles
-
-# Page folders
-mkdir -p src/pages/auth
-mkdir -p src/pages/admin/installations
-mkdir -p src/pages/admin/installers
-mkdir -p src/pages/installer/installations
-
-# Supabase folders
-mkdir -p supabase/migrations
-mkdir -p supabase/functions
-
-# Test folders
-mkdir -p e2e
-
-# Public assets
-mkdir -p public/icons
+npm run dev
+# Open: http://localhost:4321/manifest.json
+# Expected: JSON file downloads/displays correctly
+# Copy JSON to https://jsonlint.com/ → Validate
 ```
 
-**Acceptance Criteria:**
+### Acceptance Criteria
 
-- All folders exist
-- Folder structure matches Astro conventions
-- Component organization by feature (installations, notifications)
-- Role-based page organization (admin, installer)
+- ✅ File exists at `public/manifest.json`
+- ✅ Valid JSON syntax (no errors on jsonlint.com)
+- ✅ All required fields present (name, icons, start_url, display)
+- ✅ Accessible via browser at `/manifest.json`
+- ✅ Icon paths resolve correctly (absolute paths: `/icons/icon-*.png`)
+- ✅ Theme color matches IMS brand (#2563eb)
 
 ---
 
-#### 4.2 Create Global Styles (Base Only)
+## Task 3: Create Offline Fallback Page (1 hour)
 
-- [ ] Create `src/styles/global.css`
-- [ ] Add Tailwind directives (@tailwind base, components, utilities)
-- [ ] Add ONLY @layer base styles (NO @apply component classes per user preference)
-- [ ] Configure body and html base styles
+### Description
 
-**File:** `/src/styles/global.css`
+Create static HTML page shown when user navigates while offline.
 
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+### Steps
 
-@layer base {
-  html {
-    @apply antialiased;
-  }
+- [ ] Create file `public/offline.html`
+- [ ] Add complete HTML structure with inline styles:
+  - HTML5 doctype, `lang="es"`
+  - Viewport meta tag
+  - Title: "Sin conexión | IMS"
+- [ ] Add inline CSS styles:
+  - CSS reset (margin, padding, box-sizing)
+  - Body: gradient background (#eff6ff to #dbeafe), flexbox centering
+  - Icon container: 80x80 circle, red background (#fee2e2), centered SVG
+  - Title: 24px, gray-900
+  - Message: 16px, gray-600, line-height 1.5
+  - Button: blue (#2563eb), white text, hover effect (#1d4ed8)
+- [ ] Add content structure:
+  - Container div with centered content
+  - Icon div with WiFi-off SVG icon
+  - H1: "Sin conexión"
+  - Paragraph: "No tienes conexión a internet. Verifica tu conexión e intenta de nuevo."
+  - Button with `onclick="location.reload()"`: "Reintentar"
+- [ ] Verify page renders correctly at http://localhost:4321/offline.html
+- [ ] Test button reloads page
 
-  body {
-    @apply bg-gray-50 text-gray-900 min-h-screen;
-  }
-}
+### Testing
+
+```bash
+npm run dev
+# Open: http://localhost:4321/offline.html
+# Expected: See styled offline page with blue button
+# Click "Reintentar" button → Page reloads
+# Verify responsive design (resize browser)
 ```
 
-**IMPORTANT:** Per user preference, do NOT add @apply classes for components (.btn, .input, etc). All component styling will use utility classes directly in Astro files.
+### Acceptance Criteria
 
-**Acceptance Criteria:**
-
-- File exists at `/src/styles/global.css`
-- Tailwind directives included
-- Only @layer base styles (no component layer with @apply)
-- Clean, minimal setup
+- ✅ File exists at `public/offline.html`
+- ✅ Valid HTML5 syntax (no errors in W3C validator)
+- ✅ All styles inline (no external CSS files)
+- ✅ No external dependencies (images, fonts, scripts)
+- ✅ Responsive design (works on mobile 320px+ and desktop)
+- ✅ "Reintentar" button reloads page
+- ✅ Accessible via browser at `/offline.html`
+- ✅ WiFi-off icon displays correctly
 
 ---
 
-### 5. Supabase Client Infrastructure
+## Task 4: Implement Service Worker (2-3 hours)
 
-#### 5.1 Create Supabase Client Configuration
+### Description
 
-- [ ] Create `src/lib/supabase.ts`
-- [ ] Configure Supabase client with anonymous key
-- [ ] Add TypeScript types (placeholder for Phase 02)
-- [ ] Add JSDoc comments explaining RLS behavior
+Create service worker script handling cache management, offline support, and push notifications (skeleton).
 
-**File:** `/src/lib/supabase.ts`
+### Steps
 
-```typescript
-import { createClient } from '@supabase/supabase-js';
+#### 4.1: Setup and Constants
 
-/**
- * Supabase client configured with anonymous (public) key.
- *
- * IMPORTANT: This client respects Row Level Security (RLS) policies.
- * - All queries use the authenticated user's context
- * - RLS policies control data access at the database level
- * - Never trust client-side permission checks alone
- *
- * For server-side operations requiring elevated permissions,
- * use Supabase Edge Functions with the service role key.
- */
+- [ ] Create file `public/sw.js`
+- [ ] Define constant `CACHE_NAME = 'ims-cache-v1'`
+- [ ] Define array `STATIC_ASSETS`:
+  ```javascript
+  const STATIC_ASSETS = [
+    '/favicon.svg',
+    '/manifest.json',
+    '/icons/icon-192.png',
+    '/icons/icon-512.png',
+    '/offline.html' // IMPORTANT: Include offline page
+  ];
+  ```
 
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+#### 4.2: Install Event Handler
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables. Check .env file and ensure PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY are set.'
-  );
-}
+- [ ] Implement `install` event listener
+- [ ] Log "[SW] Installing..."
+- [ ] Open cache with `caches.open(CACHE_NAME)`
+- [ ] Cache all `STATIC_ASSETS` with `cache.addAll()`
+- [ ] Call `self.skipWaiting()` to activate immediately
+- [ ] Use `event.waitUntil()` to keep worker alive
+- [ ] Handle errors gracefully (log but don't fail)
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+#### 4.3: Activate Event Handler
 
-// Type placeholder - will be generated in Phase 02 after schema creation
-// Run: npx supabase gen types typescript --project-id <id> > src/types/database.ts
-export type Database = any; // TODO: Replace in Phase 02
+- [ ] Implement `activate` event listener
+- [ ] Log "[SW] Activating..."
+- [ ] Get all cache names with `caches.keys()`
+- [ ] Delete caches where `name !== CACHE_NAME`
+- [ ] Call `self.clients.claim()` to take control of pages
+- [ ] Use `event.waitUntil()` to keep worker alive
+
+#### 4.4: Fetch Event Handler (Network-First Strategy)
+
+- [ ] Implement `fetch` event listener
+- [ ] Extract `request` and `url` from event
+- [ ] Skip cross-origin requests (`url.origin !== location.origin`)
+- [ ] Skip API/auth requests:
+  - `/api/*` paths
+  - `/auth/*` paths
+  - URLs containing `supabase`
+- [ ] Implement network-first logic:
+  - Try `fetch(request)` first
+  - On success: clone response, update cache, return original
+  - On failure: try `caches.match(request)`
+  - If navigate mode and no cache: return `/offline.html`
+  - Otherwise: return `Response` with 503 status
+- [ ] Use `event.respondWith()` to intercept response
+
+#### 4.5: Message Event Handler
+
+- [ ] Implement `message` event listener
+- [ ] Check for `event.data.type === 'SKIP_WAITING'`
+- [ ] Call `self.skipWaiting()` if message received
+- [ ] Purpose: Allow manual service worker update
+
+#### 4.6: Push Notification Handlers (Skeleton for Phase 15)
+
+- [ ] Implement `push` event listener:
+  - Log push event
+  - Check if `event.data` exists
+  - Parse `event.data.json()`
+  - Show notification with `self.registration.showNotification()`
+  - Use icon `/icons/icon-192.png`
+  - Use `event.waitUntil()` to keep worker alive
+- [ ] Implement `notificationclick` event listener:
+  - Close notification with `event.notification.close()`
+  - Get URL from `event.notification.data.url` or default to `/`
+  - Use `clients.matchAll()` to find existing windows
+  - Focus existing window or open new one
+  - Use `event.waitUntil()` to keep worker alive
+
+#### 4.7: Console Logging and Debugging
+
+- [ ] Add console logs for all events (prefixed with "[SW]")
+- [ ] Log cache operations (add, delete, match)
+- [ ] Log skipped requests (API, auth, cross-origin)
+- [ ] Log errors with stack traces
+
+### Testing
+
+```bash
+npm run dev
+# Open DevTools (F12) → Application → Service Workers
+# Expected: No service worker registered yet (registration in next task)
+# Manually test by opening DevTools Console and running:
+# navigator.serviceWorker.register('/sw.js')
+# Expected: Service worker registers, console shows "[SW] Installing..." then "[SW] Activating..."
 ```
 
-**Acceptance Criteria:**
+### Acceptance Criteria
 
-- File exists at `/src/lib/supabase.ts`
-- Environment variables validated with helpful error message
-- JSDoc comments explain RLS behavior
-- Type placeholder with TODO for Phase 02
+- ✅ File exists at `public/sw.js`
+- ✅ Valid JavaScript syntax (no errors in console)
+- ✅ Install event caches 5 static assets (including `/offline.html`)
+- ✅ Activate event cleans old caches correctly
+- ✅ Fetch event implements network-first strategy
+- ✅ Cross-origin requests ignored (not intercepted)
+- ✅ API/auth requests ignored (bypass cache)
+- ✅ Offline navigation shows `/offline.html`
+- ✅ Push notification handlers prepared (not fully functional)
+- ✅ All event handlers use `event.waitUntil()` correctly
+- ✅ Console logs all events with "[SW]" prefix
 
 ---
 
-#### 5.2 Create Supabase Types Placeholder
+## Task 5: Add Service Worker Registration (30 minutes)
 
-- [ ] Create `src/types/database.ts` with placeholder type
-- [ ] Add comment explaining type generation in Phase 02
+### Description
 
-**File:** `/src/types/database.ts`
+Update `BaseLayout.astro` to register service worker and link manifest.
 
-```typescript
-/**
- * Database type definitions for Supabase.
- *
- * This file will be auto-generated in Phase 02 after database schema creation.
- *
- * Generation command:
- * npx supabase gen types typescript --project-id <your-project-id> > src/types/database.ts
- *
- * DO NOT edit this file manually - it will be overwritten.
- */
+### Steps
 
-export type Database = {
-  public: {
-    Tables: {};
-    Views: {};
-    Functions: {};
-    Enums: {};
-  };
-};
-```
-
-**Acceptance Criteria:**
-
-- File exists at `/src/types/database.ts`
-- Placeholder structure matches Supabase type format
-- Clear comment about Phase 02 regeneration
-
----
-
-### 6. Package.json Scripts
-
-#### 6.1 Add Test Scripts
-
-- [ ] Add `test` script for unit tests
-- [ ] Add `test:watch` for development
-- [ ] Add `test:coverage` for coverage reports
-- [ ] Add `test:integration` for integration tests (requires Supabase)
-- [ ] Add `test:e2e` for Playwright E2E tests
-- [ ] Add `test:e2e:ui` for Playwright UI mode
-
-**File:** `/package.json` (scripts section)
-
-```json
-{
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "lint": "eslint . --ext .ts,.astro",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
-  }
-}
-```
-
-**Acceptance Criteria:**
-
-- All test scripts defined
-- Lint and format scripts available
-- Scripts use correct commands
-
----
-
-#### 6.2 Configure Integration Test Setup
-
-- [ ] Create `vitest.integration.config.ts` for integration tests
-- [ ] Configure to ONLY run `*.integration.test.ts` files
-- [ ] Add environment variable for test database (optional)
-
-**File:** `/vitest.integration.config.ts`
-
-```typescript
-import { defineConfig } from 'vitest/config';
-import path from 'path';
-
-export default defineConfig({
-  test: {
-    environment: 'node',
-    globals: true,
-    include: ['**/*.integration.test.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/.astro/**'],
-    setupFiles: ['./src/tests/integration-setup.ts']
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@components': path.resolve(__dirname, './src/components'),
-      '@lib': path.resolve(__dirname, './src/lib'),
-      '@layouts': path.resolve(__dirname, './src/layouts'),
-      '@types': path.resolve(__dirname, './src/types')
+- [ ] Open `src/layouts/BaseLayout.astro`
+- [ ] Add manifest link to `<head>` section:
+  ```html
+  <link rel="manifest" href="/manifest.json" />
+  ```
+- [ ] Add apple touch icon link to `<head>` section:
+  ```html
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  ```
+- [ ] Add service worker registration script before `</body>`:
+  ```html
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then((reg) => console.log('[SW] Registered:', reg.scope))
+          .catch((err) => console.error('[SW] Registration failed:', err));
+      });
     }
-  }
-});
-```
+  </script>
+  ```
+- [ ] Verify script is inline (not external file)
+- [ ] Verify no TypeScript errors in project
 
-**Acceptance Criteria:**
-
-- File exists in project root
-- Only runs integration tests
-- Setup file configured for Supabase test connection
-
----
-
-### 7. Temporary Verification Page
-
-#### 7.1 Create Temporary Index Page
-
-- [ ] Create `src/pages/index.astro` with minimal content
-- [ ] Import global CSS
-- [ ] Display "Setup Complete" message
-- [ ] Add Spanish text (app language)
-- [ ] Use Tailwind utility classes (no @apply)
-
-**File:** `/src/pages/index.astro`
-
-```astro
----
-import '@/styles/global.css';
-// Página temporal - será reemplazada en Fase 06
----
-
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IMS - Configuración Completa</title>
-  </head>
-  <body class="flex items-center justify-center min-h-screen bg-gray-50">
-    <div class="text-center">
-      <div class="inline-flex items-center justify-center w-20 h-20 mb-6 rounded-full bg-green-100">
-        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
-          ></path>
-        </svg>
-      </div>
-      <h1 class="text-4xl font-bold text-gray-900 mb-3">IMS Setup Completo</h1>
-      <p class="text-lg text-gray-600 mb-2">Fase 01 completada correctamente</p>
-      <p class="text-sm text-gray-500">Astro 5 + Supabase + Tailwind CSS</p>
-    </div>
-  </body>
-</html>
-```
-
-**Acceptance Criteria:**
-
-- File exists at `/src/pages/index.astro`
-- Global CSS imported
-- Spanish text used
-- Only utility classes (no @apply classes)
-- Displays checkmark icon and success message
-
----
-
-### 8. Git Hooks Configuration
-
-#### 8.1 Initialize Husky
-
-- [ ] Run `npx husky install`
-- [ ] Create `.husky/` folder
-- [ ] Add prepare script to package.json
-
-**Commands:**
+### Testing
 
 ```bash
-npx husky install
-npm pkg set scripts.prepare="husky install"
+npm run dev
+# Open http://localhost:4321
+# Open DevTools (F12) → Console
+# Expected: "[SW] Registered: http://localhost:4321/"
+# Open DevTools → Application → Service Workers
+# Expected: Service worker "activated and running"
 ```
 
-**Acceptance Criteria:**
+### Acceptance Criteria
 
-- `.husky/` folder exists
-- `prepare` script in package.json
+- ✅ Manifest link added to `<head>` section
+- ✅ Apple touch icon link added to `<head>` section
+- ✅ Service worker registration script added before `</body>`
+- ✅ Registration happens after page load (doesn't block render)
+- ✅ Browser support check included (`'serviceWorker' in navigator`)
+- ✅ Error handling included (catch block logs error)
+- ✅ No TypeScript/build errors
+- ✅ Script inline (not external .js file)
 
 ---
 
-#### 8.2 Create Pre-Commit Hook
+## Task 6: Verify PWA Installation (1 hour)
 
-- [ ] Create `.husky/pre-commit` file
-- [ ] Configure lint-staged to run Prettier and ESLint on staged files
+### Description
 
-**File:** `/.husky/pre-commit`
+Comprehensive manual testing of PWA functionality.
 
-```bash
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+### Steps
 
-npx lint-staged
-```
+#### 6.1: Verify Manifest Loading
 
-**File:** `/package.json` (add lint-staged config)
+- [ ] Open app in Chrome: http://localhost:4321
+- [ ] Open DevTools → Application → Manifest
+- [ ] Verify all manifest properties display correctly:
+  - Name: "IMS - Installation Management System"
+  - Short name: "IMS"
+  - Start URL: "/"
+  - Display: "standalone"
+  - Theme color: #2563eb
+  - Icons: 192x192 and 512x512 shown with preview
 
-```json
-{
-  "lint-staged": {
-    "*.{ts,astro}": ["prettier --write", "eslint --fix"],
-    "*.{json,css,md}": ["prettier --write"]
-  }
-}
-```
+#### 6.2: Verify Service Worker Registration
 
-**Acceptance Criteria:**
+- [ ] Open DevTools → Application → Service Workers
+- [ ] Verify service worker registered:
+  - Status: "activated and running" (green dot)
+  - Scope: "/"
+  - Source: "/sw.js"
+- [ ] Click "Update" → Service worker re-installs
+- [ ] Check console for "[SW] Installing..." and "[SW] Activating..." logs
 
-- Pre-commit hook exists and is executable
-- lint-staged configuration in package.json
-- Hook formats and lints only staged files
+#### 6.3: Verify Cache Population
 
----
+- [ ] Open DevTools → Application → Cache Storage
+- [ ] Verify cache `ims-cache-v1` exists
+- [ ] Expand cache → Verify 5 cached assets:
+  - `/favicon.svg`
+  - `/manifest.json`
+  - `/icons/icon-192.png`
+  - `/icons/icon-512.png`
+  - `/offline.html`
+- [ ] Click asset → Preview shows content
 
-#### 8.3 Create Pre-Push Hook (Recommended)
+#### 6.4: Test PWA Installability
 
-- [ ] Create `.husky/pre-push` file
-- [ ] Configure to run build before push
-- [ ] Abort push if build fails
+- [ ] Check Chrome address bar for "Install" icon (⊕ or download icon)
+- [ ] Click "Install" → Verify install prompt appears
+- [ ] Click "Install" in prompt → App installs
+- [ ] Verify installed app opens in new window (no browser UI)
+- [ ] Check taskbar/dock → App icon appears
 
-**File:** `/.husky/pre-push`
+#### 6.5: Test Offline Mode
 
-```bash
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+- [ ] In DevTools → Network, enable "Offline" checkbox
+- [ ] Navigate to any page (e.g., `/admin/installations`)
+- [ ] Expected: `/offline.html` displayed with "Sin conexión" message
+- [ ] Click "Reintentar" button → Page still offline
+- [ ] Disable "Offline" → Click "Reintentar" again
+- [ ] Expected: Page loads successfully
 
-echo "Running build before push..."
-npm run build
+#### 6.6: Test Mobile Installation (Optional)
 
-if [ $? -ne 0 ]; then
-  echo "Build failed. Push aborted."
-  exit 1
-fi
+- [ ] Deploy to Vercel or use ngrok for HTTPS tunnel
+- [ ] Open on Android device (Chrome):
+  - Tap Chrome menu → "Install app"
+  - Or banner appears automatically
+  - App icon appears on home screen
+- [ ] Open on iOS device (Safari):
+  - Tap Share button → "Add to Home Screen"
+  - App icon appears on home screen
+- [ ] Open installed app → Verify standalone mode (no browser UI)
 
-echo "Build successful. Proceeding with push."
-```
+### Acceptance Criteria
 
-**Acceptance Criteria:**
-
-- Pre-push hook exists and is executable
-- Build runs before push
-- Push blocked if build fails
-
----
-
-## Testing Requirements (MANDATORY)
-
-### Unit Tests
-
-#### Test 1: Supabase Client Initialization
-
-**File:** `/src/lib/supabase.test.ts`
-
-```typescript
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { supabase } from './supabase';
-
-describe('Supabase Client', () => {
-  it('should initialize without errors', () => {
-    expect(supabase).toBeDefined();
-  });
-
-  it('should have required methods', () => {
-    expect(supabase.auth).toBeDefined();
-    expect(supabase.from).toBeDefined();
-  });
-
-  it('should throw error if environment variables are missing', async () => {
-    // This test validates error handling
-    // Actual test implementation depends on how env vars are mocked
-    expect(import.meta.env.PUBLIC_SUPABASE_URL).toBeDefined();
-    expect(import.meta.env.PUBLIC_SUPABASE_ANON_KEY).toBeDefined();
-  });
-});
-```
-
-**Purpose:** Validate Supabase client initializes correctly
+- ✅ Manifest loads without errors in DevTools
+- ✅ All manifest properties display correctly
+- ✅ Service worker registers and activates successfully
+- ✅ Cache populated with all 5 static assets
+- ✅ PWA installable in Chrome (shows install prompt)
+- ✅ Offline page displays when network unavailable
+- ✅ "Reintentar" button works correctly
+- ✅ App works in standalone mode after installation
+- ✅ (Optional) Mobile installation works on Android/iOS
 
 ---
 
-#### Test 2: Environment Variable Validation
+## Task 7: Test Service Worker Lifecycle (1 hour)
 
-**File:** `/src/lib/env.test.ts`
+### Description
 
-```typescript
-import { describe, it, expect } from 'vitest';
+Test service worker installation, activation, updates, and edge cases.
 
-describe('Environment Variables', () => {
-  it('should have required Supabase variables', () => {
-    expect(import.meta.env.PUBLIC_SUPABASE_URL).toBeDefined();
-    expect(import.meta.env.PUBLIC_SUPABASE_ANON_KEY).toBeDefined();
-  });
+### Test Cases
 
-  it('should have required app variables', () => {
-    expect(import.meta.env.PUBLIC_APP_URL).toBeDefined();
-  });
-});
-```
+#### Test 7.1: First Installation
 
-**Purpose:** Ensure environment variables are properly configured
+- [ ] Clear all site data (DevTools → Application → Clear storage → "Clear site data")
+- [ ] Refresh page (F5)
+- [ ] Expected: Console logs "[SW] Installing..." then "[SW] Activating..."
+- [ ] Expected: Cache `ims-cache-v1` created with 5 assets
+- [ ] Expected: Service worker status "activated and running"
+- [ ] Expected: No errors in console
+
+#### Test 7.2: Subsequent Visits
+
+- [ ] Close browser tab completely
+- [ ] Reopen tab and navigate to http://localhost:4321
+- [ ] Expected: NO "[SW] Installing..." log (worker already installed)
+- [ ] Expected: Service worker immediately active
+- [ ] Expected: Cache still populated (5 assets)
+- [ ] Expected: Page loads faster (cached assets)
+
+#### Test 7.3: Service Worker Update
+
+- [ ] Edit `public/sw.js`: Change `CACHE_NAME` to `'ims-cache-v2'`
+- [ ] Save file and refresh page (F5)
+- [ ] Open DevTools → Application → Service Workers
+- [ ] Expected: New service worker in "waiting to activate" state
+- [ ] Expected: Old service worker still active
+- [ ] Click "skipWaiting" in DevTools or refresh again (Shift+F5)
+- [ ] Expected: New service worker activates
+- [ ] Open DevTools → Application → Cache Storage
+- [ ] Expected: Old cache `ims-cache-v1` deleted
+- [ ] Expected: New cache `ims-cache-v2` created
+- [ ] Revert change: Change back to `'ims-cache-v1'` for consistency
+
+#### Test 7.4: Offline Navigation
+
+- [ ] Navigate to `/installer` or `/admin` while online
+- [ ] Verify page loads correctly
+- [ ] Enable "Offline" mode in DevTools → Network
+- [ ] Navigate to different page or refresh (F5)
+- [ ] Expected: `/offline.html` displayed with "Sin conexión" message
+- [ ] Expected: Blue "Reintentar" button visible
+- [ ] Click "Reintentar" → Page attempts reload (still offline)
+- [ ] Disable "Offline" mode
+- [ ] Click "Reintentar" again → Expected: Page loads successfully
+
+#### Test 7.5: API Requests Not Cached
+
+- [ ] Clear console (DevTools → Console → Clear)
+- [ ] Navigate to `/admin/installations` (or any page with Supabase queries)
+- [ ] Open DevTools → Network tab
+- [ ] Filter: `supabase` in request URL
+- [ ] Expected: Supabase API requests hit network (not cached)
+- [ ] Expected: No Supabase responses in Cache Storage
+- [ ] Check console: Expected: Service worker logs skip API requests
+
+#### Test 7.6: Cross-Origin Requests Ignored
+
+- [ ] Clear console
+- [ ] Open DevTools → Network tab
+- [ ] Navigate to page (if any external resources loaded)
+- [ ] Filter: cross-origin requests (different domain)
+- [ ] Expected: Service worker doesn't intercept cross-origin requests
+- [ ] Expected: No cross-origin responses cached
+- [ ] Check Cache Storage → No external domain assets
+
+### Acceptance Criteria
+
+- ✅ Test 7.1 (First Installation) passes
+- ✅ Test 7.2 (Subsequent Visits) passes
+- ✅ Test 7.3 (Service Worker Update) passes
+- ✅ Test 7.4 (Offline Navigation) passes
+- ✅ Test 7.5 (API Requests Not Cached) passes
+- ✅ Test 7.6 (Cross-Origin Requests Ignored) passes
+- ✅ No console errors in any test
+- ✅ Service worker lifecycle works correctly
+- ✅ Cache management works as expected
 
 ---
 
-### Integration Tests
+## Task 8: Write E2E Tests (1 hour)
 
-#### Test 3: Supabase Connection (Integration)
+### Description
 
-**File:** `/src/lib/supabase.integration.test.ts`
+Create Playwright E2E tests for PWA functionality.
 
-```typescript
-import { describe, it, expect } from 'vitest';
-import { supabase } from './supabase';
+### Steps
 
-describe('Supabase Integration', () => {
-  it('should connect to Supabase', async () => {
-    const { data, error } = await supabase.auth.getSession();
-
-    // Should not error (session may be null, that's ok)
-    expect(error).toBeNull();
-  });
-
-  it('should have access to database', async () => {
-    // Attempt to query (will fail if no tables, but connection should work)
-    const { error } = await supabase.from('_test_connection').select('*').limit(1);
-
-    // Error is expected (table doesn't exist yet), but should be a DB error, not connection error
-    if (error) {
-      expect(error.code).not.toBe('PGRST301'); // Not a connection error
-    }
-  });
-});
-```
-
-**Purpose:** Validate Supabase connection works (requires Supabase instance)
-
----
-
-### E2E Tests
-
-#### Test 4: Homepage Renders
-
-**File:** `/e2e/homepage.spec.ts`
-
-```typescript
-import { test, expect } from '@playwright/test';
-
-test.describe('Homepage', () => {
-  test('should load successfully', async ({ page }) => {
+- [ ] Create file `e2e/pwa.spec.ts`
+- [ ] Import Playwright `test` and `expect`
+- [ ] Write Test 1: Service Worker Registration
+  ```typescript
+  test('should register service worker on page load', async ({ page }) => {
     await page.goto('/');
-
-    await expect(page).toHaveTitle(/IMS/);
+    const swState = await page.evaluate(() => {
+      return navigator.serviceWorker.controller?.state;
+    });
+    expect(swState).toBe('activated');
   });
-
-  test('should display setup complete message', async ({ page }) => {
+  ```
+- [ ] Write Test 2: Manifest Loaded
+  ```typescript
+  test('should load web app manifest', async ({ page }) => {
     await page.goto('/');
-
-    const heading = page.locator('h1');
-    await expect(heading).toContainText('IMS Setup Completo');
+    const manifestLink = await page.locator('link[rel="manifest"]');
+    expect(await manifestLink.getAttribute('href')).toBe('/manifest.json');
+    const response = await page.goto('/manifest.json');
+    expect(response?.status()).toBe(200);
   });
-
-  test('should have proper Spanish content', async ({ page }) => {
+  ```
+- [ ] Write Test 3: Offline Fallback
+  ```typescript
+  test('should show offline page when network unavailable', async ({ page, context }) => {
     await page.goto('/');
-
-    const content = page.locator('body');
-    await expect(content).toContainText('Fase 01 completada correctamente');
+    await page.waitForTimeout(1000);
+    await context.setOffline(true);
+    await page.goto('/admin/installations', { waitUntil: 'networkidle' });
+    await expect(page.locator('h1')).toHaveText('Sin conexión');
   });
-});
+  ```
+- [ ] Write Test 4: Icons Accessible
+  ```typescript
+  test('should load all PWA icons', async ({ page }) => {
+    const icons = ['/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
+    for (const icon of icons) {
+      const response = await page.goto(icon);
+      expect(response?.status()).toBe(200);
+    }
+  });
+  ```
+- [ ] Write Test 5: Cache Population
+  ```typescript
+  test('should cache static assets on install', async ({ page }) => {
+    await page.goto('/');
+    const cacheNames = await page.evaluate(async () => {
+      return await caches.keys();
+    });
+    expect(cacheNames).toContain('ims-cache-v1');
+    const cachedUrls = await page.evaluate(async () => {
+      const cache = await caches.open('ims-cache-v1');
+      const requests = await cache.keys();
+      return requests.map((req) => req.url);
+    });
+    expect(cachedUrls).toContain(expect.stringContaining('/manifest.json'));
+    expect(cachedUrls).toContain(expect.stringContaining('/favicon.svg'));
+  });
+  ```
+
+### Testing
+
+```bash
+npm run test:e2e
+# Expected: All 5 tests pass
+# Or run in UI mode:
+npm run test:e2e:debug
+# Navigate to pwa.spec.ts → Run tests
 ```
 
-**Purpose:** Validate homepage renders correctly in browser
+### Acceptance Criteria
+
+- ✅ File `e2e/pwa.spec.ts` created
+- ✅ All 5 E2E tests written
+- ✅ Tests pass in headless mode (`npm run test:e2e`)
+- ✅ Tests pass in UI mode (`npm run test:e2e:debug`)
+- ✅ No flaky tests (consistent results on multiple runs)
+- ✅ Test coverage includes service worker, manifest, icons, cache, offline
 
 ---
 
-### Test Infrastructure Setup
+## Code Quality Checklist
 
-#### Setup File for Integration Tests
+### Pre-Commit Verification
 
-**File:** `/src/tests/integration-setup.ts`
+- [ ] Run `npm run build` → Build succeeds with no errors
+- [ ] Run `npm run lint` → No ESLint errors
+- [ ] Run `npm run format` → All files formatted correctly
+- [ ] Run `npm run test:e2e` → All E2E tests pass (5 tests)
+- [ ] Verify TypeScript strict mode compliance (no type errors)
+- [ ] Check browser console → No errors or warnings
 
-```typescript
-/**
- * Setup file for integration tests.
- * Runs before all integration tests.
- */
+### File Organization
 
-import { beforeAll, afterAll } from 'vitest';
+- [ ] All PWA assets in `public/` directory
+- [ ] Icons in `public/icons/` subdirectory
+- [ ] Service worker at `public/sw.js` (root of public)
+- [ ] Manifest at `public/manifest.json` (root of public)
+- [ ] Offline page at `public/offline.html` (root of public)
+- [ ] E2E tests in `e2e/` directory
 
-beforeAll(async () => {
-  // Validate Supabase environment variables
-  if (!process.env.PUBLIC_SUPABASE_URL || !process.env.PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error(
-      'Integration tests require Supabase environment variables. ' +
-        'Create .env file with PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY'
-    );
-  }
+### Documentation
 
-  console.log('Integration test environment initialized');
-});
-
-afterAll(async () => {
-  console.log('Integration tests complete');
-});
-```
-
-**Purpose:** Configure test environment for integration tests
+- [ ] All tasks in this checklist completed
+- [ ] `PHASE_14_BACKEND_ARCHITECTURE.md` reviewed and accurate
+- [ ] Update `.env.example` if needed (no new env vars for Phase 14)
+- [ ] Update `README.md` if needed (mention PWA features)
 
 ---
 
-#### Test Environment File
+## Security Verification
 
-**File:** `/.env.test`
+### Service Worker Security
 
-```env
-# Test Environment Variables
-# Copy from .env but use test Supabase project if available
+- [ ] Only same-origin requests cached (`url.origin === location.origin`)
+- [ ] Authentication requests never cached (`/auth/*` excluded)
+- [ ] API requests never cached (`/api/*` and `supabase` excluded)
+- [ ] Cross-origin requests ignored (not intercepted)
+- [ ] Only successful responses cached (`response.ok`)
+- [ ] Only GET requests cached (`request.method === 'GET'`)
 
-PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-PUBLIC_APP_URL=http://localhost:4321
-```
+### Manifest Security
 
-**Acceptance Criteria:**
+- [ ] Manifest served as static file (no dynamic generation)
+- [ ] No user input in manifest (all values hardcoded)
+- [ ] Correct `Content-Type: application/json` header (Vercel handles)
+- [ ] Icon paths absolute (no relative paths that could be manipulated)
 
-- File exists in project root
-- Same structure as .env.example
-- Used for test runs
+### Cache Poisoning Prevention
 
----
-
-### Test Checklist
-
-- [ ] Unit test for Supabase client (`supabase.test.ts`)
-- [ ] Unit test for environment variables (`env.test.ts`)
-- [ ] Integration test for Supabase connection (`supabase.integration.test.ts`)
-- [ ] E2E test for homepage (`homepage.spec.ts`)
-- [ ] Integration test setup file (`integration-setup.ts`)
-- [ ] Test environment file (`.env.test`)
-- [ ] All tests pass: `npm test`
-- [ ] Integration tests pass: `npm run test:integration` (requires Supabase)
-- [ ] E2E tests pass: `npm run test:e2e`
+- [ ] Cache versioning implemented (`CACHE_NAME` with version)
+- [ ] Old caches deleted on activation
+- [ ] Network-first strategy (fresh data prioritized)
+- [ ] No sensitive data cached (no auth tokens, API responses)
 
 ---
 
-## Verification and Acceptance Criteria
+## Performance Verification
 
-### Phase 01 Complete When:
+### Service Worker Performance
 
-#### Development Environment
+- [ ] Service worker registration doesn't block page load (`window.addEventListener('load', ...)`)
+- [ ] Cache operations async (no blocking main thread)
+- [ ] Static assets cache size < 1MB (currently ~200KB)
+- [ ] No memory leaks (service worker properly terminates)
 
-- [ ] `npm run dev` starts without errors
-- [ ] Navigate to `http://localhost:4321` shows "IMS Setup Completo" page
-- [ ] Page displays with correct Spanish text
-- [ ] Page uses Tailwind styles (centered content, colors)
-- [ ] No console errors in browser
-- [ ] Hot reload works when editing files
+### Cache Strategy Performance
 
----
+- [ ] Network-first prevents stale data (always tries network first)
+- [ ] Cache only used as fallback (offline support)
+- [ ] No unnecessary cache reads (skip API/auth requests)
+- [ ] Cache updates async (doesn't slow down responses)
 
-#### Build Process
+### Bundle Size Impact
 
-- [ ] `npm run build` completes successfully
-- [ ] Build output in `dist/` folder
-- [ ] No TypeScript errors
-- [ ] No build warnings (except expected Astro warnings)
-- [ ] `npm run preview` shows production build
-
----
-
-#### Code Quality
-
-- [ ] `npm run lint` passes with no errors
-- [ ] `npm run format:check` shows all files formatted
-- [ ] Pre-commit hook formats staged files
-- [ ] Pre-push hook runs build successfully
-- [ ] TypeScript strict mode enabled
-- [ ] All path aliases resolve correctly
+- [ ] Service worker file size < 10KB (currently ~5KB)
+- [ ] Manifest file size < 1KB
+- [ ] Offline page size < 5KB (inline styles)
+- [ ] Icons total size < 150KB (3 placeholder icons)
 
 ---
 
-#### Testing
+## Deployment Checklist
 
-- [ ] `npm test` runs unit tests successfully
-- [ ] All unit tests pass (green)
-- [ ] `npm run test:integration` runs (requires .env with Supabase)
-- [ ] Integration tests connect to Supabase
-- [ ] `npm run test:e2e` runs Playwright tests
-- [ ] E2E test passes for homepage
-- [ ] Test coverage report generated
+### Vercel Deployment (Automatic)
 
----
+- [ ] Verify `public/` folder structure correct
+- [ ] Push to Git → Vercel deploys automatically
+- [ ] No `vercel.json` changes needed
+- [ ] HTTPS provided by default (required for service worker)
 
-#### Project Structure
+### Post-Deployment Verification
 
-- [ ] All folders created as specified
-- [ ] `src/lib/supabase.ts` exists and exports client
-- [ ] `src/types/database.ts` exists with placeholder
-- [ ] `src/styles/global.css` exists (base only, no @apply components)
-- [ ] `.env.example` exists with all variables
-- [ ] `.gitignore` properly configured
-- [ ] `supabase/` folder structure ready for Phase 02
+- [ ] Visit production URL (https://ims.vercel.app or custom domain)
+- [ ] Open DevTools → Application → Service Workers
+- [ ] Expected: Service worker registered and active
+- [ ] Open DevTools → Application → Manifest
+- [ ] Expected: Manifest loads correctly
+- [ ] Test PWA installation in production
+- [ ] Test offline mode in production
 
----
+### Mobile Testing
 
-#### Configuration Files
-
-- [ ] `astro.config.mjs` - SSR mode, Vercel adapter, Tailwind
-- [ ] `tailwind.config.mjs` - Primary colors, content paths
-- [ ] `tsconfig.json` - Strict mode, path aliases
-- [ ] `vitest.config.ts` - Unit test configuration
-- [ ] `vitest.integration.config.ts` - Integration test configuration
-- [ ] `playwright.config.ts` - E2E test configuration
-- [ ] `.eslintrc.cjs` - TypeScript + Astro linting
-- [ ] `.prettierrc.cjs` - Code formatting
-- [ ] `.husky/pre-commit` - Format and lint on commit
-- [ ] `.husky/pre-push` - Build before push
+- [ ] Test on Android device (Chrome)
+- [ ] Test on iOS device (Safari)
+- [ ] Verify "Add to Home Screen" works
+- [ ] Verify standalone mode works (no browser UI)
+- [ ] Verify icons appear correctly on home screen
 
 ---
 
-#### Documentation
+## Final Acceptance Criteria
 
-- [ ] This `workspace/backend.md` file created
-- [ ] All checklist items documented
-- [ ] Testing requirements clearly defined
-- [ ] Acceptance criteria specified
+### Component Level
 
----
+- ✅ All icon files exist and accessible (3 files)
+- ✅ Manifest valid JSON and accessible
+- ✅ Offline page renders correctly
+- ✅ Service worker valid JavaScript and registers
 
-## Post-Phase 01 Next Steps
+### Functionality Level
 
-**Phase 02: Supabase Setup**
+- ✅ PWA installable in Chrome (desktop and mobile)
+- ✅ Offline fallback page displays when offline
+- ✅ Cache populates with 5 static assets
+- ✅ Network-first strategy works correctly
+- ✅ API/auth requests bypass cache
 
-- Create Supabase project (cloud or local CLI)
-- Apply database schema (tables, RLS policies)
-- Generate TypeScript types (`database.ts`)
-- Create first migration file
+### Integration Level
 
-**Phase 03: Supabase Client Integration**
+- ✅ Service worker registration in BaseLayout works
+- ✅ Manifest linked in BaseLayout `<head>`
+- ✅ Apple touch icon linked in BaseLayout `<head>`
+- ✅ All assets served correctly by Astro/Vercel
 
-- Implement authentication helpers
-- Create auth utility functions
-- Set up session management
+### Testing Level
 
-**Phase 04-06: Authentication Flow**
+- ✅ All 5 E2E tests pass consistently
+- ✅ All 6 manual test cases pass (Task 7)
+- ✅ PWA installation verified on desktop
+- ✅ Mobile installation verified (Android and/or iOS)
 
-- Configure Google OAuth
-- Build login/callback pages
-- Implement middleware for route protection
+### Security Level
 
----
+- ✅ Only same-origin requests cached
+- ✅ API/auth requests never cached
+- ✅ Service worker served over HTTPS in production
+- ✅ Cache versioning prevents poisoning
 
-## Architecture Decisions Record
+### Performance Level
 
-### Decision 1: SSR vs. SPA
+- ✅ Service worker doesn't block initial render
+- ✅ Cache size under 1MB (~200KB)
+- ✅ Network-first strategy prevents stale data
+- ✅ Page load performance acceptable (<100ms overhead)
 
-**Decision:** Use Astro SSR mode (`output: 'server'`)
+### Deployment Level
 
-**Rationale:**
-
-- Better SEO (important for admin dashboards)
-- Faster initial page loads
-- Secure server-side operations (protect sensitive data)
-- Supabase client works on server and client
-
-**Trade-offs:**
-
-- Requires Vercel serverless functions (more complex than static)
-- Higher hosting costs than static site
-- More complex deployment
-
----
-
-### Decision 2: Utility-First Tailwind Only
-
-**Decision:** NO @apply classes for components (user preference)
-
-**Rationale:**
-
-- User explicitly requested utility-first approach
-- Keeps all styling in component files (easier to see)
-- Reduces CSS file size (no duplicate styles)
-- Tailwind purge works better
-
-**Trade-offs:**
-
-- More verbose Astro files (longer class strings)
-- Harder to enforce consistent component styles
-- No shared component classes (must repeat utilities)
+- ✅ Production deployment successful
+- ✅ Service worker works in production
+- ✅ PWA installable in production
+- ✅ Mobile testing completed (Android/iOS)
 
 ---
 
-### Decision 3: Strict TypeScript
+## Estimated Time Breakdown
 
-**Decision:** Use TypeScript strict mode
+- **Task 1:** Icon creation - 1-2 hours
+- **Task 2:** Manifest - 30 minutes
+- **Task 3:** Offline page - 1 hour
+- **Task 4:** Service worker - 2-3 hours
+- **Task 5:** Registration - 30 minutes
+- **Task 6:** Manual testing - 1 hour
+- **Task 7:** Lifecycle testing - 1 hour
+- **Task 8:** E2E tests - 1 hour
 
-**Rationale:**
-
-- Catch errors at compile time
-- Better IDE autocomplete
-- Supabase types require strict mode
-- Prevents null/undefined errors
-
-**Trade-offs:**
-
-- More verbose code (explicit types)
-- Slower initial development
-- Learning curve for team
+**Total: 8-10 hours** (including testing and verification)
 
 ---
 
-### Decision 4: Vitest + Playwright
+## Common Issues and Solutions
 
-**Decision:** Vitest for unit/integration, Playwright for E2E
+### Issue: Service Worker Not Registering
 
-**Rationale:**
+**Symptoms:** No "[SW] Registered" log in console
 
-- Vitest is fast and works well with Vite/Astro
-- Playwright supports all browsers
-- Clear separation: unit vs. integration vs. E2E
-- Both have excellent TypeScript support
+**Solutions:**
 
-**Trade-offs:**
+- ✅ Verify HTTPS or localhost
+- ✅ Check `sw.js` accessible at `/sw.js`
+- ✅ Clear site data and retry
+- ✅ Check browser console for errors
 
-- Two testing frameworks to learn
-- More configuration files
-- Playwright requires browser downloads
+### Issue: Assets Not Caching
 
----
+**Symptoms:** Cache empty or offline page doesn't show
 
-### Decision 5: Separate Integration Test Config
+**Solutions:**
 
-**Decision:** Use `vitest.integration.config.ts` for integration tests
+- ✅ Verify `STATIC_ASSETS` array includes `/offline.html`
+- ✅ Check asset paths are absolute (`/icons/icon-192.png`)
+- ✅ Ensure assets exist (check 404 errors)
+- ✅ Hard refresh (Ctrl+Shift+R)
 
-**Rationale:**
+### Issue: Service Worker Not Updating
 
-- Integration tests require Supabase connection (slower)
-- Unit tests should run fast without external dependencies
-- Clear separation improves CI/CD pipelines
-- Developers can run unit tests only during TDD
+**Symptoms:** Changes to `sw.js` not reflected
 
-**Trade-offs:**
+**Solutions:**
 
-- Two Vitest configs to maintain
-- Must remember to run both test suites
-- More complex npm scripts
+- ✅ Enable "Update on reload" in DevTools
+- ✅ Unregister old service worker
+- ✅ Change `CACHE_NAME` version
+- ✅ Hard refresh (Ctrl+Shift+R)
 
----
+### Issue: PWA Not Installable
 
-## Common Pitfalls and Solutions
+**Symptoms:** No install icon in Chrome
 
-### Pitfall 1: Missing Environment Variables
+**Solutions:**
 
-**Problem:** Supabase client throws error on import
-
-**Solution:**
-
-- Ensure `.env` file exists (copy from `.env.example`)
-- Restart dev server after adding env vars
-- Check env var names match exactly (PUBLIC\_ prefix required)
+- ✅ Verify manifest valid JSON
+- ✅ Check icons 192x192 and 512x512 exist
+- ✅ Ensure service worker active
+- ✅ Use HTTPS (or localhost)
+- ✅ Visit site multiple times (Chrome threshold)
 
 ---
 
-### Pitfall 2: Path Aliases Not Resolving
+## Notes
 
-**Problem:** TypeScript can't find imports like `@lib/supabase`
+### No Unit Tests
 
-**Solution:**
+Service worker runs in browser context, not Node.js. Unit testing service workers with mocks provides minimal value. E2E tests in Playwright provide better coverage.
 
-- Ensure `tsconfig.json` has `paths` configured
-- Restart TypeScript server in IDE
-- Check `vitest.config.ts` has matching aliases
+### VAPID Keys Prepared
 
----
+VAPID keys already configured in `.env` for Phase 15 (Push Notifications). Service worker includes skeleton push handlers.
 
-### Pitfall 3: Tailwind Not Working
+### Network-First Rationale
 
-**Problem:** Tailwind classes have no effect
+Network-first strategy chosen per user preference ("moderate caching"). Prevents stale installation data while providing offline fallback.
 
-**Solution:**
+### iOS Quirks
 
-- Ensure `global.css` imported in layout or page
-- Check `tailwind.config.mjs` content paths include `.astro` files
-- Restart dev server
-- Verify Tailwind integration in `astro.config.mjs`
+- Safari requires "Add to Home Screen" (no automatic install prompt)
+- Service worker support limited (some features may not work)
+- Push notifications not supported on iOS (Phase 15 limitation)
 
 ---
 
-### Pitfall 4: Tests Can't Import Astro Files
+## Phase 14 Complete When
 
-**Problem:** Vitest fails when importing `.astro` components
+- ✅ All 8 tasks checked and completed
+- ✅ All acceptance criteria met
+- ✅ All E2E tests pass (5 tests)
+- ✅ All manual tests pass (Task 6 and Task 7)
+- ✅ Code quality checklist complete
+- ✅ Security verification complete
+- ✅ Performance verification complete
+- ✅ Deployment checklist complete
+- ✅ PWA installable and functional in production
 
-**Solution:**
-
-- Don't import Astro components in unit tests
-- Test utilities and lib files separately
-- Use E2E tests for full component testing
-- Mock Astro-specific imports if needed
-
----
-
-### Pitfall 5: E2E Tests Timeout
-
-**Problem:** Playwright tests fail with timeout errors
-
-**Solution:**
-
-- Ensure dev server is running (`npm run dev`)
-- Check `baseURL` in `playwright.config.ts` matches dev server
-- Increase timeout in test file if needed
-- Use `webServer` config to auto-start dev server
-
----
-
-## Summary
-
-Phase 01 establishes a production-ready Astro 5 SSR application with:
-
-- Comprehensive testing infrastructure (unit, integration, E2E)
-- Supabase client foundation (ready for Phase 02 schema)
-- Strict TypeScript configuration with path aliases
-- Code quality tooling (ESLint, Prettier, Husky)
-- Utility-first Tailwind CSS (no @apply component classes)
-- Spanish language UI
-- Vercel deployment configuration
-
-**Estimated Time:** 2-3 hours (including test setup)
-
-**Next Phase:** Phase 02 - Supabase Setup (database schema, RLS policies, type generation)
+**Next Phase:** Phase 15 - Push Notifications (uses VAPID keys and push handlers from Phase 14)
