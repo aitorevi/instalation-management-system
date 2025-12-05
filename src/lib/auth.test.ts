@@ -172,7 +172,7 @@ describe('Authentication Helpers', () => {
       );
     });
 
-    it('should return "Session expired" error when refresh fails', async () => {
+    it('should return "Invalid session" error when refresh fails', async () => {
       const cookies = createMockCookies('expired-token', 'invalid-refresh-token');
       const mockAuthClient = {
         auth: {
@@ -193,7 +193,7 @@ describe('Authentication Helpers', () => {
 
       const result = await getCurrentUser(cookies);
 
-      expect(result).toEqual({ user: null, error: 'Session expired' });
+      expect(result).toEqual({ user: null, error: 'Invalid session' });
     });
 
     it('should return "User not found in database" error when user query fails', async () => {
