@@ -4,7 +4,7 @@ import Button from '../../../components/ui/Button.astro';
 import Input from '../../../components/ui/Input.astro';
 import Textarea from '../../../components/ui/Textarea.astro';
 import Badge from '../../../components/ui/Badge.astro';
-import Alert from '../../../components/ui/Alert.astro';
+import Toast from '../../../components/ui/Toast.astro';
 import Modal from '../../../components/ui/Modal.astro';
 import StatusBadge from '../../../components/installations/StatusBadge.astro';
 import { getUser } from '../../../lib/page-utils';
@@ -154,21 +154,6 @@ function getInitial(name: string): string {
         )
       }
     </div>
-
-    {
-      error && (
-        <Alert variant="error" title="Error" dismissible>
-          {error}
-        </Alert>
-      )
-    }
-    {
-      success && (
-        <Alert variant="success" title="Éxito" dismissible>
-          {success}
-        </Alert>
-      )
-    }
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -329,4 +314,7 @@ function getInitial(name: string): string {
       </form>
     </Fragment>
   </Modal>
+
+  {success && <Toast variant="success" message={success} />}
+  {error && <Toast variant="error" message={error} duration={0} />}
 </DashboardLayout>

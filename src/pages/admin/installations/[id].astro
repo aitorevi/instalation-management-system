@@ -2,7 +2,7 @@
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 import InstallationForm from '../../../components/installations/InstallationForm.astro';
 import Button from '../../../components/ui/Button.astro';
-import Alert from '../../../components/ui/Alert.astro';
+import Toast from '../../../components/ui/Toast.astro';
 import Modal from '../../../components/ui/Modal.astro';
 import StatusBadge from '../../../components/installations/StatusBadge.astro';
 import Badge from '../../../components/ui/Badge.astro';
@@ -142,22 +142,6 @@ function formatDate(dateStr: string): string {
     </div>
   </div>
 
-  {
-    error && (
-      <Alert variant="error" title="Error" class="mb-6" dismissible>
-        {error}
-      </Alert>
-    )
-  }
-
-  {
-    success && (
-      <Alert variant="success" title="Éxito" class="mb-6" dismissible>
-        {success}
-      </Alert>
-    )
-  }
-
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <p class="text-sm text-gray-500">Creada</p>
@@ -208,4 +192,7 @@ function formatDate(dateStr: string): string {
       </form>
     </Fragment>
   </Modal>
+
+  {success && <Toast variant="success" message={success} />}
+  {error && <Toast variant="error" message={error} duration={0} />}
 </DashboardLayout>
