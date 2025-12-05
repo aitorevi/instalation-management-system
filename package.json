@@ -30,6 +30,7 @@
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@types/node": "^24.10.1",
+    "@types/web-push": "^3.6.4",
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
     "@vitest/ui": "^4.0.14",
@@ -41,7 +42,8 @@
     "prettier": "^3.7.1",
     "prettier-plugin-astro": "^0.14.1",
     "supabase": "^2.64.2",
-    "vitest": "^4.0.14"
+    "vitest": "^4.0.14",
+    "web-push": "^3.6.7"
   },
   "lint-staged": {
     "*.{ts,astro}": "eslint --fix",

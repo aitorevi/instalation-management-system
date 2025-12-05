@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
@@ -110,6 +109,44 @@ export type Database = {
             columns: ['installation_id'];
             isOneToOne: false;
             referencedRelation: 'installations';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      push_subscriptions: {
+        Row: {
+          auth: string;
+          created_at: string;
+          endpoint: string;
+          id: string;
+          p256dh: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          auth: string;
+          created_at?: string;
+          endpoint: string;
+          id?: string;
+          p256dh: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          auth?: string;
+          created_at?: string;
+          endpoint?: string;
+          id?: string;
+          p256dh?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'push_subscriptions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           }
         ];
@@ -228,6 +265,7 @@ export type Database = {
       user_role: 'admin' | 'installer';
     };
     CompositeTypes: {
+      // eslint-disable-next-line no-unused-vars
       [_ in never]: never;
     };
   };

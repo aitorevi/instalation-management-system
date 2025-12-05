@@ -38,6 +38,7 @@ export type Tables = Database['public']['Tables'];
 export type User = Tables['users']['Row'];
 export type Installation = Tables['installations']['Row'];
 export type Material = Tables['materials']['Row'];
+export type PushSubscription = Tables['push_subscriptions']['Row'];
 export type UserRole = Database['public']['Enums']['user_role'];
 export type InstallationStatus = Database['public']['Enums']['installation_status'];
 
@@ -47,3 +48,5 @@ export type InstallationInsert = Tables['installations']['Insert'];
 export type InstallationUpdate = Tables['installations']['Update'];
 export type MaterialInsert = Tables['materials']['Insert'];
 export type MaterialUpdate = Tables['materials']['Update'];
+export type PushSubscriptionInsert = Tables['push_subscriptions']['Insert'];
+export type PushSubscriptionUpdate = Tables['push_subscriptions']['Update'];

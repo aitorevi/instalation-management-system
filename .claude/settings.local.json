@@ -15,7 +15,9 @@
       "Bash(SUPABASE_ACCESS_TOKEN=sbp_ff9ed49ffded301cb3985cb38da69cd6932becec npx supabase gen types:*)",
       "Bash(npm run build:*)",
       "Bash(git merge:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
