@@ -4,6 +4,7 @@ import InstallationCardCompact from '../../components/installations/Installation
 import EmptyState from '../../components/ui/EmptyState.astro';
 import Button from '../../components/ui/Button.astro';
 import Alert from '../../components/ui/Alert.astro';
+import PushSubscribe from '../../components/notifications/PushSubscribe.astro';
 import { getUser } from '../../lib/page-utils';
 import {
   getMyStats,
@@ -150,6 +151,10 @@ const greetingDate = formatGreetingDate();
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="mb-8">
+    <PushSubscribe />
   </div>
 
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">

@@ -1,5 +1,6 @@
 import { createServerClient } from '../supabase';
 import type { Installation, InstallationInsert, InstallationUpdate } from '../supabase';
+import { sendPushNotification } from '../push-server';
 
 export interface ActionResult {
   success: boolean;
@@ -24,6 +25,20 @@ export async function createInstallation(
     return { success: false, error: error.message };
   }
 
+  if (installation.installer_id) {
+    sendPushNotification(installation.installer_id, {
+      title: 'Nueva instalación asignada',
+      body: `Se te ha asignado: ${installation.installation_name}`,
+      url: `/installer/installations/${installation.id}`,
+      data: {
+        installationId: installation.id,
+        installationName: installation.installation_name
+      }
+    }).catch((notificationError) => {
+      console.error('Failed to send push notification:', notificationError);
+    });
+  }
+
   return { success: true, data: installation };
 }
 
@@ -33,6 +48,12 @@ export async function updateInstallation(
   data: InstallationUpdate
 ): Promise<ActionResult> {
   const client = createServerClient(accessToken);
+
+  const { data: oldInstallation } = await client
+    .from('installations')
+    .select('installer_id')
+    .eq('id', id)
+    .single();
 
   const { data: installation, error } = await client
     .from('installations')
@@ -44,6 +65,23 @@ export async function updateInstallation(
   if (error) {
     console.error('Error updating installation:', error);
     return { success: false, error: error.message };
+  }
+
+  const oldInstallerId = oldInstallation?.installer_id;
+  const newInstallerId = installation.installer_id;
+
+  if (newInstallerId && oldInstallerId !== newInstallerId) {
+    sendPushNotification(newInstallerId, {
+      title: 'Nueva instalación asignada',
+      body: `Se te ha asignado: ${installation.installation_name}`,
+      url: `/installer/installations/${installation.id}`,
+      data: {
+        installationId: installation.id,
+        installationName: installation.installation_name
+      }
+    }).catch((notificationError) => {
+      console.error('Failed to send push notification:', notificationError);
+    });
   }
 
   return { success: true, data: installation };
