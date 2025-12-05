@@ -4,6 +4,7 @@ import InstallationCard from '../../components/installations/InstallationCard.as
 import EmptyState from '../../components/ui/EmptyState.astro';
 import Button from '../../components/ui/Button.astro';
 import Toast from '../../components/ui/Toast.astro';
+import StatCard from '../../components/ui/StatCard.astro';
 import { getUser } from '../../lib/page-utils';
 import { getInstallationStats, getUpcomingInstallations } from '../../lib/queries/installations';
 import { getUsersCount } from '../../lib/queries/users';
@@ -34,89 +35,10 @@ try {
   </div>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            ></path>
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm text-gray-500">Total Instalaciones</p>
-          <p class="text-2xl font-semibold text-gray-900">{stats.total}</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-          <svg
-            class="w-6 h-6 text-yellow-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm text-gray-500">Pendientes</p>
-          <p class="text-2xl font-semibold text-gray-900">{stats.pending}</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-          <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm text-gray-500">Completadas</p>
-          <p class="text-2xl font-semibold text-gray-900">{stats.completed}</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-          <svg
-            class="w-6 h-6 text-purple-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-            ></path>
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm text-gray-500">Instaladores</p>
-          <p class="text-2xl font-semibold text-gray-900">{usersCount.installers}</p>
-        </div>
-      </div>
-    </div>
+    <StatCard label="Total Instalaciones" value={stats.total} icon="clipboard" color="blue" />
+    <StatCard label="Pendientes" value={stats.pending} icon="clock" color="yellow" />
+    <StatCard label="Completadas" value={stats.completed} icon="check" color="green" />
+    <StatCard label="Instaladores" value={usersCount.installers} icon="users" color="purple" />
   </div>
 
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
