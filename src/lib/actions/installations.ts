@@ -25,14 +25,15 @@ export async function createInstallation(
     return { success: false, error: error.message };
   }
 
-  if (installation.installer_id) {
-    sendPushNotification(installation.installer_id, {
+  if (installation.assigned_to) {
+    sendPushNotification(installation.assigned_to, {
       title: 'Nueva instalación asignada',
-      body: `Se te ha asignado: ${installation.installation_name}`,
+      body: `Se te ha asignado: ${installation.client_name} - ${installation.address}`,
       url: `/installer/installations/${installation.id}`,
       data: {
         installationId: installation.id,
-        installationName: installation.installation_name
+        clientName: installation.client_name,
+        address: installation.address
       }
     }).catch((notificationError) => {
       console.error('Failed to send push notification:', notificationError);
@@ -51,7 +52,7 @@ export async function updateInstallation(
 
   const { data: oldInstallation } = await client
     .from('installations')
-    .select('installer_id')
+    .select('assigned_to')
     .eq('id', id)
     .single();
 
@@ -67,17 +68,18 @@ export async function updateInstallation(
     return { success: false, error: error.message };
   }
 
-  const oldInstallerId = oldInstallation?.installer_id;
-  const newInstallerId = installation.installer_id;
+  const oldInstallerId = oldInstallation?.assigned_to;
+  const newInstallerId = installation.assigned_to;
 
   if (newInstallerId && oldInstallerId !== newInstallerId) {
     sendPushNotification(newInstallerId, {
       title: 'Nueva instalación asignada',
-      body: `Se te ha asignado: ${installation.installation_name}`,
+      body: `Se te ha asignado: ${installation.client_name} - ${installation.address}`,
       url: `/installer/installations/${installation.id}`,
       data: {
         installationId: installation.id,
-        installationName: installation.installation_name
+        clientName: installation.client_name,
+        address: installation.address
       }
     }).catch((notificationError) => {
       console.error('Failed to send push notification:', notificationError);
