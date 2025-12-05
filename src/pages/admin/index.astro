@@ -38,8 +38,8 @@ try {
   </div>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <StatCard label="Total Instalaciones" value={stats.total} icon="clipboard" color="blue" />
     <StatCard label="Pendientes" value={stats.pending} icon="clock" color="yellow" />
+    <StatCard label="En Progreso" value={stats.inProgress} icon="bolt" color="blue" />
     <StatCard label="Completadas" value={stats.completed} icon="check" color="green" />
     <StatCard label="Instaladores" value={usersCount.installers} icon="users" color="purple" />
   </div>

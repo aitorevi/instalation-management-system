@@ -32,39 +32,12 @@ const linkProps = href ? { href } : {};
     !href && 'hover:shadow-md'
   ]}
 >
-  <div class="flex items-start justify-between mb-4">
-    <div class="flex-1">
-      <div class="flex items-center gap-2 mb-2">
-        <h3 class="text-lg font-semibold text-gray-900">{installation.client_name}</h3>
-        <StatusBadge status={installation.status} />
-      </div>
-      <p class="text-sm text-gray-600">{installation.installation_type}</p>
-    </div>
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-lg font-semibold text-gray-900">{installation.client_name}</h3>
+    <StatusBadge status={installation.status} />
   </div>
 
   <div class="space-y-2 mb-4">
-    <div class="flex items-start gap-2">
-      <svg
-        class="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-        ></path>
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-      </svg>
-      <span class="text-sm text-gray-600">{installation.address}</span>
-    </div>
-
     {
       installation.scheduled_date && (
         <div class="flex items-start gap-2">
@@ -91,6 +64,44 @@ const linkProps = href ? { href } : {};
       )
     }
 
+    <div class="flex items-start gap-2">
+      <svg
+        class="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+        ></path>
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+      </svg>
+      <span class="text-sm text-gray-600">{installation.address}</span>
+    </div>
+
+    <div class="flex items-start gap-2">
+      <svg
+        class="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+      </svg>
+      <span class="text-sm text-gray-600">{installation.installation_type}</span>
+    </div>
+
     {
       hasInstaller(installation) && installation.installer && (
         <div class="flex items-start gap-2">
@@ -111,15 +122,28 @@ const linkProps = href ? { href } : {};
         </div>
       )
     }
-  </div>
 
-  {
-    installation.notes && (
-      <div class="mb-4">
-        <p class="text-sm text-gray-600 line-clamp-2">{installation.notes}</p>
-      </div>
-    )
-  }
+    {
+      installation.notes && (
+        <div class="flex items-start gap-2">
+          <svg
+            class="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          <p class="text-sm text-gray-600 line-clamp-2">{installation.notes}</p>
+        </div>
+      )
+    }
+  </div>
 
   {
     showActions && !href && (

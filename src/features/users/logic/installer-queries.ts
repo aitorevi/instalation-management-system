@@ -121,7 +121,8 @@ export async function getTodayInstallations(
 /**
  * Get upcoming installations for the logged-in installer.
  * Returns future installations with status pending or in_progress,
- * ordered by scheduled_date ascending (earliest first).
+ * ordered by scheduled_date ascending (earliest first), then by created_at descending.
+ * Includes installations without scheduled_date.
  *
  * @param accessToken - User access token for RLS
  * @param userId - Installer user ID
@@ -147,8 +148,7 @@ export async function getUpcomingInstallations(
       .eq('assigned_to', userId)
       .is('archived_at', null)
       .in('status', ['pending', 'in_progress'])
-      .gte('scheduled_date', tomorrowStr)
-      .order('scheduled_date', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(limit);
 
     if (error) {
@@ -156,7 +156,22 @@ export async function getUpcomingInstallations(
       return [];
     }
 
-    return data || [];
+    const filtered = (data || []).filter((installation) => {
+      if (!installation.scheduled_date) return true;
+      const scheduledDate = installation.scheduled_date.split('T')[0];
+      return scheduledDate >= tomorrowStr;
+    });
+
+    const sorted = filtered.sort((a, b) => {
+      if (a.scheduled_date && !b.scheduled_date) return -1;
+      if (!a.scheduled_date && b.scheduled_date) return 1;
+      if (a.scheduled_date && b.scheduled_date) {
+        return new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime();
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    return sorted.slice(0, limit);
   } catch (error) {
     console.error('Unexpected error in getUpcomingInstallations:', error);
     return [];

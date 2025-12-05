@@ -75,14 +75,23 @@ export async function getUpcomingInstallations(
     )
     .is('archived_at', null)
     .in('status', ['pending', 'in_progress'])
-    .order('scheduled_date', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: false })
     .limit(limit);
 
   if (error) {
     throw new Error(`Failed to fetch upcoming installations: ${error.message}`);
   }
 
-  return (data || []) as InstallationWithInstaller[];
+  const sorted = (data || []).sort((a, b) => {
+    if (a.scheduled_date && !b.scheduled_date) return -1;
+    if (!a.scheduled_date && b.scheduled_date) return 1;
+    if (a.scheduled_date && b.scheduled_date) {
+      return new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime();
+    }
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
+  return sorted as InstallationWithInstaller[];
 }
 
 export async function getInstallations(

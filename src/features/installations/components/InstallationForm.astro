@@ -29,7 +29,12 @@ const statusOptions = [
 function formatDateForInput(dateStr?: string | null): string {
   if (!dateStr) return '';
   const date = new Date(dateStr);
-  return date.toISOString().slice(0, 16);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 ---
 
@@ -38,41 +43,49 @@ function formatDateForInput(dateStr?: string | null): string {
     <h3 class="text-lg font-medium text-gray-900 mb-4">Datos del Cliente</h3>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Input
-        name="client_name"
-        label="Nombre del Cliente"
-        value={installation?.client_name}
-        required
-        placeholder="Nombre completo"
-      />
+      <label>
+        <Input
+          name="client_name"
+          label="Nombre del Cliente"
+          value={installation?.client_name}
+          required
+          placeholder="Nombre completo"
+        />
+      </label>
 
-      <Input
-        name="client_phone"
-        label="Teléfono"
-        type="tel"
-        value={installation?.client_phone}
-        required
-        placeholder="+34 600 000 000"
-      />
+      <label>
+        <Input
+          name="address"
+          label="Dirección"
+          value={installation?.address}
+          required
+          placeholder="Calle, número, ciudad"
+          class=""
+        />
+      </label>
 
-      <Input
-        name="client_email"
-        label="Email"
-        type="email"
-        value={installation?.client_email}
-        required
-        placeholder="cliente@email.com"
-        class="md:col-span-2"
-      />
+      <label>
+        <Input
+          name="client_phone"
+          label="Teléfono"
+          type="tel"
+          value={installation?.client_phone}
+          required
+          placeholder="+34 600 000 000"
+        />
+      </label>
 
-      <Input
-        name="address"
-        label="Dirección"
-        value={installation?.address}
-        required
-        placeholder="Calle, número, ciudad"
-        class="md:col-span-2"
-      />
+      <label>
+        <Input
+          name="client_email"
+          label="Email"
+          type="email"
+          value={installation?.client_email}
+          required
+          placeholder="cliente@email.com"
+          class=""
+        />
+      </label>
     </div>
   </div>
 
@@ -80,38 +93,46 @@ function formatDateForInput(dateStr?: string | null): string {
     <h3 class="text-lg font-medium text-gray-900 mb-4">Detalles de la Instalación</h3>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Input
-        name="installation_type"
-        label="Tipo de Instalación"
-        value={installation?.installation_type}
-        required
-        placeholder="Ej: Fibra óptica, ADSL, etc."
-        class="md:col-span-2"
-      />
+      <label>
+        <Input
+          name="installation_type"
+          label="Material"
+          value={installation?.installation_type}
+          required
+          placeholder="Ej: Fibra óptica, ADSL, etc."
+          class="md:col-span-2"
+        />
+      </label>
 
-      <Input
-        name="scheduled_date"
-        label="Fecha y Hora Programada"
-        type="datetime-local"
-        value={formatDateForInput(installation?.scheduled_date)}
-        hint="Fecha y hora en la que está programada la instalación"
-      />
+      <label>
+        <Input
+          name="scheduled_date"
+          label="Fecha y Hora Programada"
+          type="datetime-local"
+          value={formatDateForInput(installation?.scheduled_date)}
+          hint="Fecha y hora en la que está programada la instalación"
+        />
+      </label>
 
-      <Select
-        name="assigned_to"
-        label="Instalador Asignado"
-        options={installerOptions}
-        value={installation?.assigned_to || ''}
-      />
+      <label>
+        <Select
+          name="assigned_to"
+          label="Instalador Asignado"
+          options={installerOptions}
+          value={installation?.assigned_to || ''}
+        />
+      </label>
 
       {
         installation && (
-          <Select
-            name="status"
-            label="Estado"
-            options={statusOptions}
-            value={installation.status}
-          />
+          <label>
+            <Select
+              name="status"
+              label="Estado"
+              options={statusOptions}
+              value={installation.status}
+            />
+          </label>
         )
       }
     </div>
@@ -120,13 +141,15 @@ function formatDateForInput(dateStr?: string | null): string {
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
     <h3 class="text-lg font-medium text-gray-900 mb-4">Notas</h3>
 
-    <Textarea
-      name="notes"
-      label="Notas adicionales"
-      value={installation?.notes}
-      placeholder="Información adicional sobre la instalación..."
-      rows={4}
-    />
+    <label>
+      <Textarea
+        name="notes"
+        label="Notas adicionales"
+        value={installation?.notes}
+        placeholder="Información adicional sobre la instalación..."
+        rows={4}
+      />
+    </label>
   </div>
 
   <div class="flex items-center justify-end gap-4">
