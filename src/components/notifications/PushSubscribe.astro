@@ -107,6 +107,7 @@ if (!vapidPublicKey) {
 
   class PushSubscribeManager {
     private state: UIState = 'loading';
+    private operationInProgress: boolean = false;
     private toggleButton: HTMLButtonElement;
     private toggleIndicator: HTMLElement;
     private statusText: HTMLElement;
@@ -167,6 +168,11 @@ if (!vapidPublicKey) {
     }
 
     private async handleToggle(): Promise<void> {
+      if (this.operationInProgress) {
+        console.warn('[PushSubscribe] Operation already in progress, ignoring click');
+        return;
+      }
+
       const isEnabled = this.state === 'enabled';
 
       if (isEnabled) {
@@ -177,6 +183,7 @@ if (!vapidPublicKey) {
     }
 
     private async handleSubscribe(): Promise<void> {
+      this.operationInProgress = true;
       this.updateUI('loading');
       this.hideAlert();
 
@@ -247,10 +254,13 @@ if (!vapidPublicKey) {
           true
         );
         this.updateUI('disabled');
+      } finally {
+        this.operationInProgress = false;
       }
     }
 
     private async handleUnsubscribe(): Promise<void> {
+      this.operationInProgress = true;
       this.updateUI('loading');
       this.hideAlert();
 
@@ -303,6 +313,8 @@ if (!vapidPublicKey) {
           true
         );
         this.updateUI('enabled');
+      } finally {
+        this.operationInProgress = false;
       }
     }
 

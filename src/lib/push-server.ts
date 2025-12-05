@@ -8,6 +8,13 @@ const vapidPublicKey = import.meta.env.PUBLIC_VAPID_PUBLIC_KEY;
 const vapidPrivateKey = import.meta.env.VAPID_PRIVATE_KEY;
 const vapidSubject = import.meta.env.VAPID_SUBJECT;
 
+const DEFAULT_ICON_PATH = '/icons/icon-192.png';
+const DEFAULT_BADGE_PATH = '/icons/icon-96.png';
+const DEFAULT_NOTIFICATION_URL = '/';
+
+const HTTP_STATUS_GONE = 410;
+const HTTP_STATUS_NOT_FOUND = 404;
+
 if (!supabaseUrl || !supabaseServiceRoleKey) {
   throw new Error('Missing Supabase environment variables');
 }
@@ -34,9 +41,11 @@ export interface SendPushNotificationResult {
   totalDevices: number;
   successful: number;
   failed: number;
+  staleSubscriptionsRemoved: number;
   errors: Array<{
     endpoint: string;
     error: string;
+    statusCode?: number;
   }>;
 }
 
@@ -60,6 +69,7 @@ export async function sendPushNotification(
       totalDevices: 0,
       successful: 0,
       failed: 0,
+      staleSubscriptionsRemoved: 0,
       errors: []
     };
   }
@@ -67,9 +77,9 @@ export async function sendPushNotification(
   const notificationPayload = JSON.stringify({
     title: payload.title,
     body: payload.body,
-    url: payload.url || '/',
-    icon: payload.icon || '/icons/icon-192x192.png',
-    badge: payload.badge || '/icons/icon-96x96.png',
+    url: payload.url || DEFAULT_NOTIFICATION_URL,
+    icon: payload.icon || DEFAULT_ICON_PATH,
+    badge: payload.badge || DEFAULT_BADGE_PATH,
     data: payload.data || {}
   });
 
@@ -87,15 +97,47 @@ export async function sendPushNotification(
         await webpush.sendNotification(pushSubscription, notificationPayload);
         return { endpoint: sub.endpoint, success: true };
       } catch (error) {
-        console.error(`Failed to send push notification to ${sub.endpoint}:`, error);
+        const statusCode = (error as { statusCode?: number }).statusCode;
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+        console.error(`Failed to send push notification to ${sub.endpoint}:`, {
+          error: errorMessage,
+          statusCode
+        });
+
         return {
           endpoint: sub.endpoint,
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: errorMessage,
+          statusCode
         };
       }
     })
   );
+
+  const staleEndpoints: string[] = [];
+
+  results.forEach((result) => {
+    if (result.status === 'fulfilled' && !result.value.success) {
+      const statusCode = result.value.statusCode;
+      if (statusCode === HTTP_STATUS_GONE || statusCode === HTTP_STATUS_NOT_FOUND) {
+        staleEndpoints.push(result.value.endpoint);
+      }
+    }
+  });
+
+  if (staleEndpoints.length > 0) {
+    const { error: deleteError } = await supabaseAdmin
+      .from('push_subscriptions')
+      .delete()
+      .in('endpoint', staleEndpoints);
+
+    if (deleteError) {
+      console.error('Error removing stale subscriptions:', deleteError);
+    } else {
+      console.log(`Removed ${staleEndpoints.length} stale subscription(s) for user ${userId}`);
+    }
+  }
 
   const successful = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
   const failed = results.filter(
@@ -108,7 +150,8 @@ export async function sendPushNotification(
       if (r.status === 'fulfilled') {
         return {
           endpoint: r.value.endpoint,
-          error: r.value.error || 'Unknown error'
+          error: r.value.error || 'Unknown error',
+          statusCode: r.value.statusCode
         };
       }
       return {
@@ -118,7 +161,7 @@ export async function sendPushNotification(
     });
 
   console.log(
-    `Push notification sent to user ${userId}: ${successful}/${subscriptions.length} successful`
+    `Push notification sent to user ${userId}: ${successful}/${subscriptions.length} successful, ${staleEndpoints.length} stale removed`
   );
 
   return {
@@ -126,6 +169,7 @@ export async function sendPushNotification(
     totalDevices: subscriptions.length,
     successful,
     failed,
+    staleSubscriptionsRemoved: staleEndpoints.length,
     errors
   };
 }
