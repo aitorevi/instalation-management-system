@@ -12,11 +12,11 @@ if (!vapidPublicKey) {
 }
 ---
 
-<div class={`${className} hidden`} id="push-subscribe">
+<div class={`${className} hidden`} id="push-subscribe" data-vapid-key={vapidPublicKey}>
   <div id="error-container" class="hidden"></div>
 </div>
 
-<script define:vars={{ vapidPublicKey }}>
+<script>
   import {
     isPushSupported,
     requestNotificationPermission,
@@ -35,9 +35,7 @@ if (!vapidPublicKey) {
     private retryAttempts = 0;
     private maxRetries = 2;
 
-    constructor(vapidKey: string) {
-      this.vapidKey = vapidKey;
-
+    constructor() {
       const container = document.getElementById('push-subscribe');
       const errorContainer = document.getElementById('error-container');
 
@@ -46,6 +44,13 @@ if (!vapidPublicKey) {
         return;
       }
 
+      const vapidKey = container.getAttribute('data-vapid-key');
+      if (!vapidKey) {
+        console.error('[AutoPushSubscribe] VAPID key not found');
+        return;
+      }
+
+      this.vapidKey = vapidKey;
       this.container = container;
       this.errorContainer = errorContainer;
 
@@ -198,9 +203,9 @@ if (!vapidPublicKey) {
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      new AutoPushSubscribe(vapidPublicKey);
+      new AutoPushSubscribe();
     });
   } else {
-    new AutoPushSubscribe(vapidPublicKey);
+    new AutoPushSubscribe();
   }
 </script>
