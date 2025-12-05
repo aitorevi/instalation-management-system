@@ -2,8 +2,10 @@
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 import Button from '../../../components/ui/Button.astro';
 import StatusBadge from '../../../components/installations/StatusBadge.astro';
+import Alert from '../../../components/ui/Alert.astro';
 import { getUser } from '../../../lib/page-utils';
 import { getMyInstallationById } from '../../../lib/queries/installer';
+import { updateInstallation } from '../../../lib/actions/installations';
 
 const user = getUser(Astro);
 const accessToken = Astro.cookies.get('sb-access-token')?.value ?? '';
@@ -14,11 +16,35 @@ if (!id) {
   return Astro.redirect('/installer/installations?error=invalid-id');
 }
 
+let successMessage: string | null = null;
+let errorMessage: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const scheduled_date = formData.get('scheduled_date') as string;
+
+  if (scheduled_date) {
+    const result = await updateInstallation(accessToken, id, {
+      scheduled_date: new Date(scheduled_date).toISOString()
+    });
+
+    if (result.success) {
+      successMessage = 'Fecha actualizada correctamente';
+    } else {
+      errorMessage = result.error || 'Error al actualizar la fecha';
+    }
+  }
+}
+
 const installation = await getMyInstallationById(accessToken, user.id, id);
 
 if (!installation) {
   return Astro.redirect('/installer/installations?error=not-found');
 }
+
+const scheduledDateValue = installation.scheduled_date
+  ? new Date(installation.scheduled_date).toISOString().split('T')[0]
+  : '';
 ---
 
 <DashboardLayout title={installation.client_name} user={user}>
@@ -39,72 +65,125 @@ if (!installation) {
     <p class="text-gray-600 mt-1">{installation.installation_type}</p>
   </div>
 
+  {
+    successMessage && (
+      <Alert variant="success" title="Éxito" class="mb-6">
+        {successMessage}
+      </Alert>
+    )
+  }
+  {
+    errorMessage && (
+      <Alert variant="error" title="Error" class="mb-6">
+        {errorMessage}
+      </Alert>
+    )
+  }
+
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-    <div class="flex items-start gap-4">
-      <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Información del Cliente</h2>
+
+    <div class="space-y-4">
+      <div>
+        <span class="text-sm font-medium text-gray-500">Cliente:</span>
+        <p class="text-gray-900">{installation.client_name}</p>
       </div>
-      <div class="flex-1">
-        <h2 class="text-xl font-semibold text-gray-900 mb-2">Detalle Completo en Fase 13</h2>
-        <p class="text-gray-600 mb-4">
-          La funcionalidad completa para ver y actualizar detalles de instalación estará disponible
-          en la Fase 13.
-        </p>
 
-        <div class="space-y-3 mb-6">
+      <div>
+        <span class="text-sm font-medium text-gray-500">Dirección:</span>
+        <p class="text-gray-900">{installation.address}</p>
+      </div>
+
+      {
+        installation.client_phone && (
           <div>
-            <span class="text-sm font-medium text-gray-500">Cliente:</span>
-            <p class="text-gray-900">{installation.client_name}</p>
+            <span class="text-sm font-medium text-gray-500">Teléfono:</span>
+            <p class="text-gray-900">
+              <a href={`tel:${installation.client_phone}`} class="text-primary-600 hover:underline">
+                {installation.client_phone}
+              </a>
+            </p>
           </div>
+        )
+      }
 
+      {
+        installation.client_email && (
           <div>
-            <span class="text-sm font-medium text-gray-500">Dirección:</span>
-            <p class="text-gray-900">{installation.address}</p>
+            <span class="text-sm font-medium text-gray-500">Email:</span>
+            <p class="text-gray-900">
+              <a
+                href={`mailto:${installation.client_email}`}
+                class="text-primary-600 hover:underline"
+              >
+                {installation.client_email}
+              </a>
+            </p>
           </div>
+        )
+      }
 
-          <div>
-            <span class="text-sm font-medium text-gray-500">Estado:</span>
-            <div class="mt-1">
-              <StatusBadge status={installation.status} />
-            </div>
-          </div>
-
-          {
-            installation.scheduled_date && (
-              <div>
-                <span class="text-sm font-medium text-gray-500">Fecha programada:</span>
-                <p class="text-gray-900">
-                  {new Date(installation.scheduled_date).toLocaleDateString('es-ES', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
-                </p>
-              </div>
-            )
-          }
-
-          {
-            installation.client_phone && (
-              <div>
-                <span class="text-sm font-medium text-gray-500">Teléfono:</span>
-                <p class="text-gray-900">{installation.client_phone}</p>
-              </div>
-            )
-          }
+      <div>
+        <span class="text-sm font-medium text-gray-500">Estado:</span>
+        <div class="mt-1">
+          <StatusBadge status={installation.status} />
         </div>
-
-        <Button variant="secondary" href="/installer/installations">
-          Volver a Instalaciones
-        </Button>
       </div>
     </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Programación</h2>
+
+    <form method="POST" class="space-y-4">
+      <div>
+        <label for="scheduled_date" class="block text-sm font-medium text-gray-700 mb-2">
+          Fecha programada
+        </label>
+        <div class="flex gap-3">
+          <input
+            type="date"
+            id="scheduled_date"
+            name="scheduled_date"
+            value={scheduledDateValue}
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            required
+          />
+          <Button type="submit" variant="primary">Guardar fecha</Button>
+        </div>
+        <p class="text-sm text-gray-500 mt-2">
+          Coordina con el cliente la fecha y hora de la instalación.
+        </p>
+      </div>
+
+      {
+        installation.scheduled_date && (
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p class="text-sm text-blue-800">
+              <strong>Fecha actual:</strong>{' '}
+              {new Date(installation.scheduled_date).toLocaleDateString('es-ES', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              })}
+            </p>
+          </div>
+        )
+      }
+    </form>
+  </div>
+
+  {
+    installation.notes && (
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Notas</h2>
+        <p class="text-gray-700 whitespace-pre-wrap">{installation.notes}</p>
+      </div>
+    )
+  }
+
+  <div class="flex gap-3">
+    <Button variant="secondary" href="/installer/installations">Volver a Instalaciones</Button>
   </div>
 </DashboardLayout>
