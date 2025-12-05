@@ -18,7 +18,14 @@
       "Bash(git stash:*)",
       "Bash(find:*)",
       "Bash(cat:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(rm:*)",
+      "Bash(git mv:*)",
+      "Bash(mkdir:*)",
+      "Bash(git fetch:*)",
+      "Bash(git rebase:*)",
+      "Bash(grep:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,10 +1,11 @@
 ---
 import DashboardLayout from '../../layouts/DashboardLayout.astro';
-import InstallationCardCompact from '../../components/installations/InstallationCardCompact.astro';
-import EmptyState from '../../components/ui/EmptyState.astro';
-import Button from '../../components/ui/Button.astro';
-import Toast from '../../components/ui/Toast.astro';
-import PushSubscribe from '../../components/notifications/PushSubscribe.astro';
+import InstallationCard from '@/features/installations/components/InstallationCard.astro';
+import EmptyState from '@/features/shared/EmptyState.astro';
+import Button from '@/features/shared/Button.astro';
+import Toast from '@/features/shared/Toast.astro';
+import StatCard from '@/features/shared/StatCard.astro';
+import PushSubscribe from '@/features/notifications/components/PushSubscribe.astro';
 import { getUser } from '../../lib/page-utils';
 import {
   getMyStats,
@@ -12,7 +13,7 @@ import {
   getUpcomingInstallations,
   type InstallerStats,
   type Installation
-} from '../../lib/queries/installer';
+} from '@/features/users/logic/installer-queries';
 
 const user = getUser(Astro);
 const accessToken = Astro.cookies.get('sb-access-token')?.value ?? '';
@@ -60,89 +61,11 @@ const greetingDate = formatGreetingDate();
     <p class="text-gray-600 mt-1">{greetingDate}</p>
   </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-          <svg
-            class="w-6 h-6 text-primary-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            ></path>
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm text-gray-500">Hoy</p>
-          <p class="text-2xl font-semibold text-gray-900">{stats.todayCount}</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-          <svg
-            class="w-6 h-6 text-yellow-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm text-gray-500">Pendientes</p>
-          <p class="text-2xl font-semibold text-gray-900">{stats.pending}</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm text-gray-500">En Progreso</p>
-          <p class="text-2xl font-semibold text-gray-900">{stats.inProgress}</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-          <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm text-gray-500">Completadas</p>
-          <p class="text-2xl font-semibold text-gray-900">{stats.completed}</p>
-        </div>
-      </div>
-    </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <StatCard label="Hoy" value={stats.todayCount} icon="calendar" color="primary" />
+    <StatCard label="Pendientes" value={stats.pending} icon="clock" color="yellow" />
+    <StatCard label="En Progreso" value={stats.inProgress} icon="bolt" color="blue" />
+    <StatCard label="Completadas" value={stats.completed} icon="check" color="green" />
   </div>
 
   <div class="mb-8">
@@ -159,12 +82,12 @@ const greetingDate = formatGreetingDate();
           description="Disfruta tu día libre o revisa las próximas instalaciones."
         />
       ) : (
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {todayInstallations.map((installation) => (
-            <InstallationCardCompact
+            <InstallationCard
               installation={installation}
               href={`/installer/installations/${installation.id}`}
-              showDate={false}
+              showActions={false}
             />
           ))}
         </div>
@@ -185,12 +108,12 @@ const greetingDate = formatGreetingDate();
           description="Las nuevas instalaciones aparecerán aquí cuando sean asignadas."
         />
       ) : (
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {upcomingInstallations.map((installation) => (
-            <InstallationCardCompact
+            <InstallationCard
               installation={installation}
               href={`/installer/installations/${installation.id}`}
-              showDate={true}
+              showActions={false}
             />
           ))}
         </div>

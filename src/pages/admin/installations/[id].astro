@@ -1,19 +1,19 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import InstallationForm from '../../../components/installations/InstallationForm.astro';
-import Button from '../../../components/ui/Button.astro';
-import Toast from '../../../components/ui/Toast.astro';
-import Modal from '../../../components/ui/Modal.astro';
-import StatusBadge from '../../../components/installations/StatusBadge.astro';
-import Badge from '../../../components/ui/Badge.astro';
+import InstallationForm from '@/features/installations/components/InstallationForm.astro';
+import Button from '@/features/shared/Button.astro';
+import Toast from '@/features/shared/Toast.astro';
+import Modal from '@/features/shared/Modal.astro';
+import StatusBadge from '@/features/installations/components/StatusBadge.astro';
+import Badge from '@/features/shared/Badge.astro';
 import { getUser } from '../../../lib/page-utils';
-import { getInstallationById } from '../../../lib/queries/installations';
-import { getInstallers } from '../../../lib/queries/users';
+import { getInstallationById } from '@/features/installations/logic/queries';
+import { getInstallers } from '@/features/users/logic/queries';
 import {
   updateInstallation,
   archiveInstallation,
   restoreInstallation
-} from '../../../lib/actions/installations';
+} from '@/features/installations/logic/mutations';
 
 const user = getUser(Astro);
 const accessToken = Astro.cookies.get('sb-access-token')?.value || '';
@@ -50,7 +50,12 @@ if (Astro.request.method === 'POST') {
       error = result.error || 'Error al restaurar';
     }
   } else {
-    const scheduled_date = formData.get('scheduled_date') as string;
+    const scheduled_date_input = formData.get('scheduled_date') as string;
+
+    let scheduled_date = null;
+    if (scheduled_date_input) {
+      scheduled_date = new Date(scheduled_date_input).toISOString();
+    }
 
     const data = {
       client_name: formData.get('client_name') as string,
@@ -58,7 +63,7 @@ if (Astro.request.method === 'POST') {
       client_email: formData.get('client_email') as string,
       address: formData.get('address') as string,
       installation_type: formData.get('installation_type') as string,
-      scheduled_date: scheduled_date ? new Date(scheduled_date).toISOString() : null,
+      scheduled_date,
       assigned_to: (formData.get('assigned_to') as string) || null,
       status: formData.get('status') as any,
       notes: (formData.get('notes') as string) || null

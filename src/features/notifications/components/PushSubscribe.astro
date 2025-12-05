@@ -1,0 +1,211 @@
+---
+interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+
+const vapidPublicKey = import.meta.env.PUBLIC_VAPID_PUBLIC_KEY;
+
+if (!vapidPublicKey) {
+  throw new Error('PUBLIC_VAPID_PUBLIC_KEY is not set in environment variables');
+}
+---
+
+<div class={`${className} hidden`} id="push-subscribe" data-vapid-key={vapidPublicKey}>
+  <div id="error-container" class="hidden"></div>
+</div>
+
+<script>
+  import {
+    isPushSupported,
+    requestNotificationPermission,
+    subscribeToPush,
+    saveSubscription,
+    getCurrentSubscription
+  } from '@/features/notifications/logic/push-client';
+
+  type NotificationState = 'checking' | 'active' | 'error' | 'unsupported' | 'denied';
+
+  class AutoPushSubscribe {
+    private state: NotificationState = 'checking';
+    private container: HTMLElement;
+    private errorContainer: HTMLElement;
+    private vapidKey: string;
+    private retryAttempts = 0;
+    private maxRetries = 2;
+
+    constructor() {
+      const container = document.getElementById('push-subscribe');
+      const errorContainer = document.getElementById('error-container');
+
+      if (!container || !errorContainer) {
+        console.error('[AutoPushSubscribe] Required elements not found');
+        return;
+      }
+
+      const vapidKey = container.getAttribute('data-vapid-key');
+      if (!vapidKey) {
+        console.error('[AutoPushSubscribe] VAPID key not found');
+        return;
+      }
+
+      this.vapidKey = vapidKey;
+      this.container = container;
+      this.errorContainer = errorContainer;
+
+      this.init();
+    }
+
+    private async init(): Promise<void> {
+      if (!isPushSupported()) {
+        this.handleUnsupported();
+        return;
+      }
+
+      await this.ensureSubscription();
+    }
+
+    private async ensureSubscription(): Promise<void> {
+      try {
+        const existingSubscription = await getCurrentSubscription();
+
+        if (existingSubscription) {
+          this.state = 'active';
+          console.log('[AutoPushSubscribe] Push notifications already active');
+          return;
+        }
+
+        await this.activateNotifications();
+      } catch (error) {
+        console.error('[AutoPushSubscribe] Error checking subscription:', error);
+        this.handleError('Error al verificar el estado de las notificaciones');
+      }
+    }
+
+    private async activateNotifications(): Promise<void> {
+      try {
+        const permission = await requestNotificationPermission();
+
+        if (permission === 'denied') {
+          this.handleDenied();
+          return;
+        }
+
+        if (permission !== 'granted') {
+          this.handleError(
+            'No se pudieron activar las notificaciones. Por favor, recarga la página y acepta los permisos cuando se soliciten.'
+          );
+          return;
+        }
+
+        const subscription = await subscribeToPush(this.vapidKey);
+
+        if (!subscription) {
+          throw new Error('Failed to create push subscription');
+        }
+
+        const saved = await saveSubscription(subscription);
+
+        if (!saved) {
+          await subscription.unsubscribe();
+          throw new Error('Failed to save subscription to server');
+        }
+
+        this.state = 'active';
+        console.log('[AutoPushSubscribe] Push notifications activated successfully');
+      } catch (error) {
+        console.error('[AutoPushSubscribe] Error activating notifications:', error);
+
+        if (this.retryAttempts < this.maxRetries) {
+          this.retryAttempts++;
+          console.log(`[AutoPushSubscribe] Retrying... (${this.retryAttempts}/${this.maxRetries})`);
+          setTimeout(() => this.activateNotifications(), 2000);
+        } else {
+          this.handleError(
+            'No se pudieron activar las notificaciones automáticamente. Por favor, contacta con el administrador.'
+          );
+        }
+      }
+    }
+
+    private handleUnsupported(): void {
+      this.state = 'unsupported';
+      this.showError(
+        'Navegador no compatible',
+        'Tu navegador no soporta notificaciones push. Para recibir notificaciones, utiliza un navegador compatible como Chrome, Firefox o Safari.',
+        'warning'
+      );
+    }
+
+    private handleDenied(): void {
+      this.state = 'denied';
+      this.showError(
+        'Permisos denegados',
+        'Has denegado los permisos para recibir notificaciones. Para activarlas, ve a la configuración de tu navegador y permite las notificaciones para este sitio.',
+        'error',
+        true
+      );
+    }
+
+    private handleError(message: string): void {
+      this.state = 'error';
+      this.showError('Error de notificaciones', message, 'error', true);
+    }
+
+    private showError(
+      title: string,
+      message: string,
+      variant: 'warning' | 'error' = 'error',
+      showReload: boolean = false
+    ): void {
+      const variantConfig = {
+        warning: {
+          bg: 'bg-yellow-50',
+          border: 'border-yellow-200',
+          text: 'text-yellow-800',
+          icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>'
+        },
+        error: {
+          bg: 'bg-red-50',
+          border: 'border-red-200',
+          text: 'text-red-800',
+          icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+        }
+      };
+
+      const config = variantConfig[variant];
+
+      const errorHtml = `
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex gap-3">
+            <svg class="w-6 h-6 flex-shrink-0 ${config.text}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              ${config.icon}
+            </svg>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold ${config.text} mb-1">${title}</h3>
+              <p class="text-sm ${config.text}">${message}</p>
+              ${
+                showReload
+                  ? `<button type="button" class="mt-3 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" onclick="window.location.reload()">Recargar página</button>`
+                  : ''
+              }
+            </div>
+          </div>
+        </div>
+      `;
+
+      this.errorContainer.innerHTML = errorHtml;
+      this.errorContainer.classList.remove('hidden');
+      this.container.classList.remove('hidden');
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      new AutoPushSubscribe();
+    });
+  } else {
+    new AutoPushSubscribe();
+  }
+</script>

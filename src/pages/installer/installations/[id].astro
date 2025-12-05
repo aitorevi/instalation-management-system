@@ -1,12 +1,12 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import Button from '../../../components/ui/Button.astro';
-import StatusBadge from '../../../components/installations/StatusBadge.astro';
-import Toast from '../../../components/ui/Toast.astro';
-import Modal from '../../../components/ui/Modal.astro';
+import Button from '@/features/shared/Button.astro';
+import StatusBadge from '@/features/installations/components/StatusBadge.astro';
+import Toast from '@/features/shared/Toast.astro';
+import Modal from '@/features/shared/Modal.astro';
 import { getUser } from '../../../lib/page-utils';
-import { getMyInstallationById } from '../../../lib/queries/installer';
-import { updateInstallation } from '../../../lib/actions/installations';
+import { getMyInstallationById } from '@/features/users/logic/installer-queries';
+import { updateInstallation } from '@/features/installations/logic/mutations';
 
 const user = getUser(Astro);
 const accessToken = Astro.cookies.get('sb-access-token')?.value ?? '';
@@ -112,7 +112,7 @@ const scheduledTimeValue = installation.scheduled_date
 
   <div class="mb-8">
     <h1 class="text-2xl font-bold text-gray-900">{installation.client_name}</h1>
-    <p class="text-gray-600 mt-1">{installation.installation_type}</p>
+    <p class="text-gray-600 mt-1">Material: {installation.installation_type}</p>
   </div>
 
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">

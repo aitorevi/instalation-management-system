@@ -1,0 +1,27 @@
+---
+import Badge from '@/features/shared/Badge.astro';
+import type { InstallationStatus } from '@/lib/supabase';
+
+interface Props {
+  status: InstallationStatus;
+  size?: 'sm' | 'md';
+}
+
+const { status, size = 'md' } = Astro.props;
+
+const statusConfig: Record<
+  InstallationStatus,
+  { label: string; variant: 'gray' | 'blue' | 'green' | 'yellow' | 'red' }
+> = {
+  pending: { label: 'Pendiente', variant: 'yellow' },
+  in_progress: { label: 'En Progreso', variant: 'blue' },
+  completed: { label: 'Completada', variant: 'green' },
+  cancelled: { label: 'Cancelada', variant: 'red' }
+};
+
+const config = statusConfig[status];
+---
+
+<Badge variant={config.variant} size={size}>
+  {config.label}
+</Badge>

@@ -1,12 +1,12 @@
 import { defineMiddleware } from 'astro:middleware';
-import { getCurrentUser, clearSessionCookies } from '../lib/auth';
+import { getCurrentUser, clearSessionCookies } from '@/features/auth/logic/auth';
 import {
   checkSessionTimeout,
   getLastActivity,
   getSessionCreatedAt,
   setSessionCreatedAt,
   updateLastActivity
-} from '../lib/session-timeout';
+} from '@/features/auth/logic/session-timeout';
 
 const PUBLIC_ROUTES = ['/login', '/auth/callback', '/auth/logout'];
 const ADMIN_PREFIX = '/admin';

@@ -1,10 +1,10 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import InstallationCardCompact from '../../../components/installations/InstallationCardCompact.astro';
-import Button from '../../../components/ui/Button.astro';
-import EmptyState from '../../../components/ui/EmptyState.astro';
+import InstallationCardCompact from '@/features/installations/components/InstallationCardCompact.astro';
+import Button from '@/features/shared/Button.astro';
+import EmptyState from '@/features/shared/EmptyState.astro';
 import { getUser } from '../../../lib/page-utils';
-import { getMyInstallations, type Installation } from '../../../lib/queries/installer';
+import { getMyInstallations, type Installation } from '@/features/users/logic/installer-queries';
 import type { InstallationStatus } from '../../../lib/supabase';
 
 const user = getUser(Astro);

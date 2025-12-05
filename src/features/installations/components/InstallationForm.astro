@@ -1,0 +1,159 @@
+---
+import Input from '@/features/shared/Input.astro';
+import Textarea from '@/features/shared/Textarea.astro';
+import Select from '@/features/shared/Select.astro';
+import Button from '@/features/shared/Button.astro';
+import type { Installation, User } from '@/lib/supabase';
+
+interface Props {
+  installation?: Installation | null;
+  installers: User[];
+  action: string;
+  submitLabel?: string;
+}
+
+const { installation, installers, action, submitLabel = 'Guardar' } = Astro.props;
+
+const installerOptions = [
+  { value: '', label: 'Sin asignar' },
+  ...installers.map((i) => ({ value: i.id, label: i.full_name }))
+];
+
+const statusOptions = [
+  { value: 'pending', label: 'Pendiente' },
+  { value: 'in_progress', label: 'En Progreso' },
+  { value: 'completed', label: 'Completada' },
+  { value: 'cancelled', label: 'Cancelada' }
+];
+
+function formatDateForInput(dateStr?: string | null): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+---
+
+<form method="POST" action={action} class="space-y-6">
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Datos del Cliente</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <label>
+        <Input
+          name="client_name"
+          label="Nombre del Cliente"
+          value={installation?.client_name}
+          required
+          placeholder="Nombre completo"
+        />
+      </label>
+
+      <label>
+        <Input
+          name="address"
+          label="Dirección"
+          value={installation?.address}
+          required
+          placeholder="Calle, número, ciudad"
+          class=""
+        />
+      </label>
+
+      <label>
+        <Input
+          name="client_phone"
+          label="Teléfono"
+          type="tel"
+          value={installation?.client_phone}
+          required
+          placeholder="+34 600 000 000"
+        />
+      </label>
+
+      <label>
+        <Input
+          name="client_email"
+          label="Email"
+          type="email"
+          value={installation?.client_email}
+          required
+          placeholder="cliente@email.com"
+          class=""
+        />
+      </label>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Detalles de la Instalación</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <label>
+        <Input
+          name="installation_type"
+          label="Material"
+          value={installation?.installation_type}
+          required
+          placeholder="Ej: Fibra óptica, ADSL, etc."
+          class="md:col-span-2"
+        />
+      </label>
+
+      <label>
+        <Input
+          name="scheduled_date"
+          label="Fecha y Hora Programada"
+          type="datetime-local"
+          value={formatDateForInput(installation?.scheduled_date)}
+          hint="Fecha y hora en la que está programada la instalación"
+        />
+      </label>
+
+      <label>
+        <Select
+          name="assigned_to"
+          label="Instalador Asignado"
+          options={installerOptions}
+          value={installation?.assigned_to || ''}
+        />
+      </label>
+
+      {
+        installation && (
+          <label>
+            <Select
+              name="status"
+              label="Estado"
+              options={statusOptions}
+              value={installation.status}
+            />
+          </label>
+        )
+      }
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Notas</h3>
+
+    <label>
+      <Textarea
+        name="notes"
+        label="Notas adicionales"
+        value={installation?.notes}
+        placeholder="Información adicional sobre la instalación..."
+        rows={4}
+      />
+    </label>
+  </div>
+
+  <div class="flex items-center justify-end gap-4">
+    <Button variant="secondary" href="/admin/installations">Cancelar</Button>
+    <Button type="submit">{submitLabel}</Button>
+  </div>
+</form>
