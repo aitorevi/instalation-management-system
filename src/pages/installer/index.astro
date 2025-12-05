@@ -1,6 +1,6 @@
 ---
 import DashboardLayout from '../../layouts/DashboardLayout.astro';
-import InstallationCardCompact from '../../components/installations/InstallationCardCompact.astro';
+import InstallationCard from '../../components/installations/InstallationCard.astro';
 import EmptyState from '../../components/ui/EmptyState.astro';
 import Button from '../../components/ui/Button.astro';
 import Toast from '../../components/ui/Toast.astro';
@@ -82,12 +82,12 @@ const greetingDate = formatGreetingDate();
           description="Disfruta tu día libre o revisa las próximas instalaciones."
         />
       ) : (
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {todayInstallations.map((installation) => (
-            <InstallationCardCompact
+            <InstallationCard
               installation={installation}
               href={`/installer/installations/${installation.id}`}
-              showDate={false}
+              showActions={false}
             />
           ))}
         </div>
@@ -108,12 +108,12 @@ const greetingDate = formatGreetingDate();
           description="Las nuevas instalaciones aparecerán aquí cuando sean asignadas."
         />
       ) : (
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {upcomingInstallations.map((installation) => (
-            <InstallationCardCompact
+            <InstallationCard
               installation={installation}
               href={`/installer/installations/${installation.id}`}
-              showDate={true}
+              showActions={false}
             />
           ))}
         </div>
