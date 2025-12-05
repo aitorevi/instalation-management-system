@@ -2,12 +2,6 @@ import webpush from 'web-push';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
 
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-const supabaseServiceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-const vapidPublicKey = import.meta.env.PUBLIC_VAPID_PUBLIC_KEY;
-const vapidPrivateKey = import.meta.env.VAPID_PRIVATE_KEY;
-const vapidSubject = import.meta.env.VAPID_SUBJECT;
-
 const DEFAULT_ICON_PATH = '/icons/icon-192.png';
 const DEFAULT_BADGE_PATH = '/icons/icon-96.png';
 const DEFAULT_NOTIFICATION_URL = '/';
@@ -15,17 +9,32 @@ const DEFAULT_NOTIFICATION_URL = '/';
 const HTTP_STATUS_GONE = 410;
 const HTTP_STATUS_NOT_FOUND = 404;
 
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  throw new Error('Missing Supabase environment variables');
+let supabaseAdmin: ReturnType<typeof createClient<Database>> | null = null;
+let vapidConfigured = false;
+
+function ensureInitialized() {
+  if (supabaseAdmin && vapidConfigured) {
+    return;
+  }
+
+  const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+  const vapidPublicKey = import.meta.env.PUBLIC_VAPID_PUBLIC_KEY;
+  const vapidPrivateKey = import.meta.env.VAPID_PRIVATE_KEY;
+  const vapidSubject = import.meta.env.VAPID_SUBJECT;
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+
+  if (!vapidPublicKey || !vapidPrivateKey || !vapidSubject) {
+    throw new Error('Missing VAPID environment variables');
+  }
+
+  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+  supabaseAdmin = createClient<Database>(supabaseUrl, supabaseServiceRoleKey);
+  vapidConfigured = true;
 }
-
-if (!vapidPublicKey || !vapidPrivateKey || !vapidSubject) {
-  throw new Error('Missing VAPID environment variables');
-}
-
-webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
-
-const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseServiceRoleKey);
 
 export interface PushNotificationPayload {
   title: string;
@@ -53,7 +62,9 @@ export async function sendPushNotification(
   userId: string,
   payload: PushNotificationPayload
 ): Promise<SendPushNotificationResult> {
-  const { data: subscriptions, error: fetchError } = await supabaseAdmin
+  ensureInitialized();
+
+  const { data: subscriptions, error: fetchError } = await supabaseAdmin!
     .from('push_subscriptions')
     .select('*')
     .eq('user_id', userId);
@@ -127,7 +138,7 @@ export async function sendPushNotification(
   });
 
   if (staleEndpoints.length > 0) {
-    const { error: deleteError } = await supabaseAdmin
+    const { error: deleteError } = await supabaseAdmin!
       .from('push_subscriptions')
       .delete()
       .in('endpoint', staleEndpoints);
