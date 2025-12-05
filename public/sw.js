@@ -1,4 +1,4 @@
-const DEBUG = true;
+const DEBUG = false;
 const log = DEBUG ? console.log.bind(console) : () => {};
 const error = DEBUG ? console.error.bind(console) : console.error.bind(console);
 
