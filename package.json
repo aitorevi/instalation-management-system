@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
-    "@types/node": "^24.10.1",
+    "@types/node": "^22.19.1",
     "@types/web-push": "^3.6.4",
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
@@ -48,5 +48,8 @@
   "lint-staged": {
     "*.{ts,astro}": "eslint --fix",
     "*.{ts,astro,json,css,md}": "prettier --write --ignore-unknown"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }
