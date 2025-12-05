@@ -1,4 +1,4 @@
-import { createServerClient } from '../supabase';
+import { createServerClient } from '@/lib/supabase';
 import type { Database } from '@types/database';
 
 export interface ActionResult {

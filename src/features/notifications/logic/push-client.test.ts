@@ -7,7 +7,7 @@ import {
   saveSubscription,
   removeSubscription,
   getCurrentSubscription
-} from './push';
+} from './push-client';
 
 describe('push.ts - Browser Push Utilities', () => {
   beforeEach(() => {

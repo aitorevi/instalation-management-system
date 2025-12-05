@@ -1,4 +1,4 @@
-import { supabase, createServerClient, type User, type UserRole } from './supabase';
+import { supabase, createServerClient, type User, type UserRole } from '@/lib/supabase';
 import type { AstroCookies } from 'astro';
 
 export interface AuthResult {

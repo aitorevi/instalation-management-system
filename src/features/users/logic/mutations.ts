@@ -1,5 +1,5 @@
-import { createServerClient } from '../supabase';
-import type { User, UserUpdate } from '../supabase';
+import { createServerClient } from '@/lib/supabase';
+import type { User, UserUpdate } from '@/lib/supabase';
 
 export interface ActionResult {
   success: boolean;

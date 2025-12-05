@@ -1,19 +1,19 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import Button from '../../../components/ui/Button.astro';
-import Input from '../../../components/ui/Input.astro';
-import Textarea from '../../../components/ui/Textarea.astro';
-import Badge from '../../../components/ui/Badge.astro';
-import Toast from '../../../components/ui/Toast.astro';
-import Modal from '../../../components/ui/Modal.astro';
-import StatusBadge from '../../../components/installations/StatusBadge.astro';
+import Button from '@/features/shared/Button.astro';
+import Input from '@/features/shared/Input.astro';
+import Textarea from '@/features/shared/Textarea.astro';
+import Badge from '@/features/shared/Badge.astro';
+import Toast from '@/features/shared/Toast.astro';
+import Modal from '@/features/shared/Modal.astro';
+import StatusBadge from '@/features/installations/components/StatusBadge.astro';
 import { getUser } from '../../../lib/page-utils';
 import {
   getUserById,
   getSingleInstallerStats,
   getInstallerInstallations
-} from '../../../lib/queries/users';
-import { updateUser, changeUserRole } from '../../../lib/actions/users';
+} from '@/features/users/logic/queries';
+import { updateUser, changeUserRole } from '@/features/users/logic/mutations';
 
 const user = getUser(Astro);
 const accessToken = Astro.cookies.get('sb-access-token')?.value || '';

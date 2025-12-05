@@ -5,14 +5,14 @@ import {
   getUpcomingInstallations,
   getMyInstallations,
   getMyInstallationById
-} from './installer';
+} from './installer-queries';
 
-vi.mock('../supabase', () => ({
+vi.mock('@/lib/supabase', () => ({
   supabase: {},
   createServerClient: vi.fn()
 }));
 
-import { createServerClient } from '../supabase';
+import { createServerClient } from '@/lib/supabase';
 
 const mockInstallation = {
   id: 'install-123',

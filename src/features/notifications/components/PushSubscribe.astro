@@ -23,7 +23,7 @@ if (!vapidPublicKey) {
     subscribeToPush,
     saveSubscription,
     getCurrentSubscription
-  } from '@/lib/push';
+  } from '@/features/notifications/logic/push-client';
 
   type NotificationState = 'checking' | 'active' | 'error' | 'unsupported' | 'denied';
 

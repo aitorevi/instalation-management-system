@@ -1,10 +1,10 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import InstallationForm from '../../../components/installations/InstallationForm.astro';
-import Toast from '../../../components/ui/Toast.astro';
+import InstallationForm from '@/features/installations/components/InstallationForm.astro';
+import Toast from '@/features/shared/Toast.astro';
 import { getUser } from '../../../lib/page-utils';
-import { getInstallers } from '../../../lib/queries/users';
-import { createInstallation } from '../../../lib/actions/installations';
+import { getInstallers } from '@/features/users/logic/queries';
+import { createInstallation } from '@/features/installations/logic/mutations';
 
 const user = getUser(Astro);
 const accessToken = Astro.cookies.get('sb-access-token')?.value || '';

@@ -4,14 +4,14 @@ import {
   getSingleInstallerStats,
   getInstallerInstallations,
   getUserById
-} from './users';
+} from './queries';
 
-vi.mock('../supabase', () => ({
+vi.mock('@/lib/supabase', () => ({
   supabase: {},
   createServerClient: vi.fn()
 }));
 
-import { createServerClient } from '../supabase';
+import { createServerClient } from '@/lib/supabase';
 
 const mockUser = {
   id: 'user-123',

@@ -1,12 +1,12 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import Button from '../../../components/ui/Button.astro';
-import StatusBadge from '../../../components/installations/StatusBadge.astro';
-import Toast from '../../../components/ui/Toast.astro';
-import Modal from '../../../components/ui/Modal.astro';
+import Button from '@/features/shared/Button.astro';
+import StatusBadge from '@/features/installations/components/StatusBadge.astro';
+import Toast from '@/features/shared/Toast.astro';
+import Modal from '@/features/shared/Modal.astro';
 import { getUser } from '../../../lib/page-utils';
-import { getMyInstallationById } from '../../../lib/queries/installer';
-import { updateInstallation } from '../../../lib/actions/installations';
+import { getMyInstallationById } from '@/features/users/logic/installer-queries';
+import { updateInstallation } from '@/features/installations/logic/mutations';
 
 const user = getUser(Astro);
 const accessToken = Astro.cookies.get('sb-access-token')?.value ?? '';

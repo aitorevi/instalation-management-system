@@ -1,7 +1,7 @@
 ---
 import StatusBadge from './StatusBadge.astro';
-import Badge from '../ui/Badge.astro';
-import type { Installation } from '../../lib/queries/installer';
+import Badge from '@/features/shared/Badge.astro';
+import type { Installation } from '@/features/users/logic/installer-queries';
 
 interface Props {
   installation: Installation;

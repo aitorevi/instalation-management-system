@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getCurrentUser, hasRole, isAdmin, isInstaller, signOut } from './auth';
 import type { AstroCookies } from 'astro';
 
-vi.mock('./supabase', () => ({
+vi.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
       refreshSession: vi.fn()
@@ -22,7 +22,7 @@ vi.mock('./supabase', () => ({
   }))
 }));
 
-import { supabase, createServerClient } from './supabase';
+import { supabase, createServerClient } from '@/lib/supabase';
 
 const createMockCookies = (
   accessToken: string | null = null,

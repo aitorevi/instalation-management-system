@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getMaterialsByInstallation } from './materials';
+import { getMaterialsByInstallation } from './queries';
 
-vi.mock('../supabase', () => ({
+vi.mock('@/lib/supabase', () => ({
   createServerClient: vi.fn()
 }));
 
@@ -32,7 +32,7 @@ describe('getMaterialsByInstallation', () => {
     const mockSelect = vi.fn(() => ({ eq: mockEq }));
     const mockFrom = vi.fn(() => ({ select: mockSelect }));
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });
@@ -51,7 +51,7 @@ describe('getMaterialsByInstallation', () => {
     const mockSelect = vi.fn(() => ({ eq: mockEq }));
     const mockFrom = vi.fn(() => ({ select: mockSelect }));
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });
@@ -68,7 +68,7 @@ describe('getMaterialsByInstallation', () => {
     const mockSelect = vi.fn(() => ({ eq: mockEq }));
     const mockFrom = vi.fn(() => ({ select: mockSelect }));
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });

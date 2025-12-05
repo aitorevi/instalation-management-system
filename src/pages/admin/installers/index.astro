@@ -1,8 +1,8 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import Badge from '../../../components/ui/Badge.astro';
+import Badge from '@/features/shared/Badge.astro';
 import { getUser } from '../../../lib/page-utils';
-import { getAllUsers, getSingleInstallerStats } from '../../../lib/queries/users';
+import { getAllUsers, getSingleInstallerStats } from '@/features/users/logic/queries';
 
 const user = getUser(Astro);
 const accessToken = Astro.cookies.get('sb-access-token')?.value || '';

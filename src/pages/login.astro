@@ -1,6 +1,6 @@
 ---
 import AuthLayout from '../layouts/AuthLayout.astro';
-import { getCurrentUser } from '../lib/auth';
+import { getCurrentUser } from '@/features/auth/logic/auth';
 
 const { user } = await getCurrentUser(Astro.cookies);
 

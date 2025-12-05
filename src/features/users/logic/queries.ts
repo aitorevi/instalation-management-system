@@ -1,6 +1,6 @@
-import { supabase, createServerClient } from '../supabase';
+import { supabase, createServerClient } from '@/lib/supabase';
 import type { Tables } from '@types/database';
-import type { Installation } from '../supabase';
+import type { Installation } from '@/lib/supabase';
 
 export type User = Tables<'users'>;
 

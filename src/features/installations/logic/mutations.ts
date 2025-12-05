@@ -1,6 +1,6 @@
-import { createServerClient } from '../supabase';
-import type { Installation, InstallationInsert, InstallationUpdate } from '../supabase';
-import { sendPushNotification } from '../push-server';
+import { createServerClient } from '@/lib/supabase';
+import type { Installation, InstallationInsert, InstallationUpdate } from '@/lib/supabase';
+import { sendPushNotification } from '@/features/notifications/logic/push-server';
 
 export interface ActionResult {
   success: boolean;

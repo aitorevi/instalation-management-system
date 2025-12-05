@@ -4,9 +4,9 @@ import {
   updateInstallationNotes,
   addMaterial,
   deleteMaterial
-} from './installer';
+} from './installer-mutations';
 
-vi.mock('../supabase', () => ({
+vi.mock('@/lib/supabase', () => ({
   createServerClient: vi.fn()
 }));
 
@@ -45,7 +45,7 @@ describe('updateInstallationStatus', () => {
       update: mockUpdate
     }));
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });
@@ -72,7 +72,7 @@ describe('updateInstallationStatus', () => {
     const mockSelect = vi.fn(() => ({ eq: mockEq }));
     const mockFrom = vi.fn(() => ({ select: mockSelect }));
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });
@@ -97,7 +97,7 @@ describe('updateInstallationStatus', () => {
     const mockSelect = vi.fn(() => ({ eq: mockEq }));
     const mockFrom = vi.fn(() => ({ select: mockSelect }));
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });
@@ -127,7 +127,7 @@ describe('updateInstallationStatus', () => {
       update: mockUpdate
     }));
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });
@@ -164,7 +164,7 @@ describe('updateInstallationNotes', () => {
       update: mockUpdate
     }));
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });
@@ -191,7 +191,7 @@ describe('updateInstallationNotes', () => {
     const mockSelect = vi.fn(() => ({ eq: mockEq }));
     const mockFrom = vi.fn(() => ({ select: mockSelect }));
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });
@@ -240,7 +240,7 @@ describe('addMaterial', () => {
       return {};
     });
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });
@@ -264,7 +264,7 @@ describe('addMaterial', () => {
     const mockSelect = vi.fn(() => ({ eq: mockEq }));
     const mockFrom = vi.fn(() => ({ select: mockSelect }));
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });
@@ -301,7 +301,7 @@ describe('deleteMaterial', () => {
       return {};
     });
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });
@@ -323,7 +323,7 @@ describe('deleteMaterial', () => {
     const mockSelect = vi.fn(() => ({ eq: mockEq }));
     const mockFrom = vi.fn(() => ({ select: mockSelect }));
 
-    const { createServerClient } = await import('../supabase');
+    const { createServerClient } = await import('@/lib/supabase');
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom
     });

@@ -1,19 +1,19 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import InstallationForm from '../../../components/installations/InstallationForm.astro';
-import Button from '../../../components/ui/Button.astro';
-import Toast from '../../../components/ui/Toast.astro';
-import Modal from '../../../components/ui/Modal.astro';
-import StatusBadge from '../../../components/installations/StatusBadge.astro';
-import Badge from '../../../components/ui/Badge.astro';
+import InstallationForm from '@/features/installations/components/InstallationForm.astro';
+import Button from '@/features/shared/Button.astro';
+import Toast from '@/features/shared/Toast.astro';
+import Modal from '@/features/shared/Modal.astro';
+import StatusBadge from '@/features/installations/components/StatusBadge.astro';
+import Badge from '@/features/shared/Badge.astro';
 import { getUser } from '../../../lib/page-utils';
-import { getInstallationById } from '../../../lib/queries/installations';
-import { getInstallers } from '../../../lib/queries/users';
+import { getInstallationById } from '@/features/installations/logic/queries';
+import { getInstallers } from '@/features/users/logic/queries';
 import {
   updateInstallation,
   archiveInstallation,
   restoreInstallation
-} from '../../../lib/actions/installations';
+} from '@/features/installations/logic/mutations';
 
 const user = getUser(Astro);
 const accessToken = Astro.cookies.get('sb-access-token')?.value || '';

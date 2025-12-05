@@ -1,11 +1,11 @@
 ---
 import DashboardLayout from '../../layouts/DashboardLayout.astro';
-import InstallationCard from '../../components/installations/InstallationCard.astro';
-import EmptyState from '../../components/ui/EmptyState.astro';
-import Button from '../../components/ui/Button.astro';
-import Toast from '../../components/ui/Toast.astro';
-import StatCard from '../../components/ui/StatCard.astro';
-import PushSubscribe from '../../components/notifications/PushSubscribe.astro';
+import InstallationCard from '@/features/installations/components/InstallationCard.astro';
+import EmptyState from '@/features/shared/EmptyState.astro';
+import Button from '@/features/shared/Button.astro';
+import Toast from '@/features/shared/Toast.astro';
+import StatCard from '@/features/shared/StatCard.astro';
+import PushSubscribe from '@/features/notifications/components/PushSubscribe.astro';
 import { getUser } from '../../lib/page-utils';
 import {
   getMyStats,
@@ -13,7 +13,7 @@ import {
   getUpcomingInstallations,
   type InstallerStats,
   type Installation
-} from '../../lib/queries/installer';
+} from '@/features/users/logic/installer-queries';
 
 const user = getUser(Astro);
 const accessToken = Astro.cookies.get('sb-access-token')?.value ?? '';

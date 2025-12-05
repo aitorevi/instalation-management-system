@@ -1,14 +1,14 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import Button from '../../../components/ui/Button.astro';
-import Input from '../../../components/ui/Input.astro';
-import Select from '../../../components/ui/Select.astro';
-import StatusBadge from '../../../components/installations/StatusBadge.astro';
-import EmptyState from '../../../components/ui/EmptyState.astro';
-import Badge from '../../../components/ui/Badge.astro';
+import Button from '@/features/shared/Button.astro';
+import Input from '@/features/shared/Input.astro';
+import Select from '@/features/shared/Select.astro';
+import StatusBadge from '@/features/installations/components/StatusBadge.astro';
+import EmptyState from '@/features/shared/EmptyState.astro';
+import Badge from '@/features/shared/Badge.astro';
 import { getUser } from '../../../lib/page-utils';
-import { getInstallations } from '../../../lib/queries/installations';
-import { getInstallers } from '../../../lib/queries/users';
+import { getInstallations } from '@/features/installations/logic/queries';
+import { getInstallers } from '@/features/users/logic/queries';
 import type { InstallationStatus } from '../../../lib/supabase';
 
 const user = getUser(Astro);

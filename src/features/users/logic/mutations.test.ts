@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { updateUser, changeUserRole, isValidSpanishPhone } from './users';
+import { updateUser, changeUserRole, isValidSpanishPhone } from './mutations';
 
-vi.mock('../supabase', () => ({
+vi.mock('@/lib/supabase', () => ({
   createServerClient: vi.fn()
 }));
 
-import { createServerClient } from '../supabase';
+import { createServerClient } from '@/lib/supabase';
 
 const mockUser = {
   id: 'user-123',

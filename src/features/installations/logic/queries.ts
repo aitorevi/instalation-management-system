@@ -1,4 +1,4 @@
-import { supabase, createServerClient } from '../supabase';
+import { supabase, createServerClient } from '@/lib/supabase';
 import type { Tables } from '@types/database';
 import type { InstallationFilters } from '@types/index';
 
