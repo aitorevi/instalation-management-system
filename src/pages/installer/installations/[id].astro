@@ -3,6 +3,7 @@ import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 import Button from '../../../components/ui/Button.astro';
 import StatusBadge from '../../../components/installations/StatusBadge.astro';
 import Toast from '../../../components/ui/Toast.astro';
+import Modal from '../../../components/ui/Modal.astro';
 import { getUser } from '../../../lib/page-utils';
 import { getMyInstallationById } from '../../../lib/queries/installer';
 import { updateInstallation } from '../../../lib/actions/installations';
@@ -21,33 +22,48 @@ let errorMessage: string | null = null;
 
 if (Astro.request.method === 'POST') {
   const formData = await Astro.request.formData();
-  const scheduled_date = formData.get('scheduled_date') as string;
-  const scheduled_time = formData.get('scheduled_time') as string;
+  const action = formData.get('_action') as string;
 
-  if (scheduled_date && scheduled_time) {
-    const dateTimeString = `${scheduled_date}T${scheduled_time}:00`;
-
-    const currentInstallation = await getMyInstallationById(accessToken, user.id, id);
-    const updateData: any = {
-      scheduled_date: new Date(dateTimeString).toISOString()
-    };
-
-    if (currentInstallation?.status === 'pending') {
-      updateData.status = 'in_progress';
-    }
-
-    const result = await updateInstallation(accessToken, id, updateData);
+  if (action === 'complete') {
+    const result = await updateInstallation(accessToken, id, {
+      status: 'completed',
+      completed_at: new Date().toISOString()
+    });
 
     if (result.success) {
-      successMessage =
-        currentInstallation?.status === 'pending'
-          ? 'Fecha programada y estado actualizado a "En Progreso"'
-          : 'Fecha y hora actualizadas correctamente';
+      successMessage = 'Instalación marcada como completada correctamente';
     } else {
-      errorMessage = result.error || 'Error al actualizar la fecha y hora';
+      errorMessage = result.error || 'Error al completar la instalación';
     }
-  } else if (!scheduled_time) {
-    errorMessage = 'Debes especificar tanto la fecha como la hora';
+  } else {
+    const scheduled_date = formData.get('scheduled_date') as string;
+    const scheduled_time = formData.get('scheduled_time') as string;
+
+    if (scheduled_date && scheduled_time) {
+      const dateTimeString = `${scheduled_date}T${scheduled_time}:00`;
+
+      const currentInstallation = await getMyInstallationById(accessToken, user.id, id);
+      const updateData: any = {
+        scheduled_date: new Date(dateTimeString).toISOString()
+      };
+
+      if (currentInstallation?.status === 'pending') {
+        updateData.status = 'in_progress';
+      }
+
+      const result = await updateInstallation(accessToken, id, updateData);
+
+      if (result.success) {
+        successMessage =
+          currentInstallation?.status === 'pending'
+            ? 'Fecha programada y estado actualizado a "En Progreso"'
+            : 'Fecha y hora actualizadas correctamente';
+      } else {
+        errorMessage = result.error || 'Error al actualizar la fecha y hora';
+      }
+    } else if (!scheduled_time) {
+      errorMessage = 'Debes especificar tanto la fecha como la hora';
+    }
   }
 }
 
@@ -211,8 +227,48 @@ const scheduledTimeValue = installation.scheduled_date
   }
 
   <div class="flex gap-3">
+    {
+      installation.status === 'in_progress' && (
+        <Button variant="primary" onclick="openCompleteModal()">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          Marcar como Completada
+        </Button>
+      )
+    }
     <Button variant="secondary" href="/installer/installations">Volver a Instalaciones</Button>
   </div>
+
+  {
+    installation.status === 'in_progress' && (
+      <Modal id="complete" title="Completar Instalación">
+        <p class="text-gray-700">
+          ¿Estás seguro de que quieres marcar esta instalación como completada?
+        </p>
+        <p class="text-sm text-gray-500 mt-2">
+          Esta acción indicará que el trabajo ha sido finalizado exitosamente.
+        </p>
+
+        <Fragment slot="footer">
+          <Button variant="secondary" onclick="closeCompleteModal()">
+            Cancelar
+          </Button>
+          <form method="POST" style="display: inline;">
+            <input type="hidden" name="_action" value="complete" />
+            <Button type="submit" variant="primary">
+              Confirmar Completada
+            </Button>
+          </form>
+        </Fragment>
+      </Modal>
+    )
+  }
 
   {successMessage && <Toast variant="success" message={successMessage} />}
   {errorMessage && <Toast variant="error" message={errorMessage} duration={0} />}
