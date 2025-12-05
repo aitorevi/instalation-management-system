@@ -75,7 +75,7 @@ const scheduledTimeValue = installation.scheduled_date
 
   {
     successMessage && (
-      <Alert variant="success" title="Éxito" class="mb-6">
+      <Alert variant="success" title="Éxito" class="mb-6" id="success-alert">
         {successMessage}
       </Alert>
     )
@@ -218,3 +218,16 @@ const scheduledTimeValue = installation.scheduled_date
     <Button variant="secondary" href="/installer/installations">Volver a Instalaciones</Button>
   </div>
 </DashboardLayout>
+
+<script>
+  const successAlert = document.getElementById('success-alert');
+  if (successAlert) {
+    setTimeout(() => {
+      successAlert.style.transition = 'opacity 0.5s ease-out';
+      successAlert.style.opacity = '0';
+      setTimeout(() => {
+        successAlert.remove();
+      }, 500);
+    }, 5000);
+  }
+</script>
