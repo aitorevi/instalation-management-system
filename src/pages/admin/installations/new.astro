@@ -16,7 +16,12 @@ let error: string | null = null;
 if (Astro.request.method === 'POST') {
   const formData = await Astro.request.formData();
 
-  const scheduled_date = formData.get('scheduled_date') as string;
+  const scheduled_date_input = formData.get('scheduled_date') as string;
+
+  let scheduled_date = null;
+  if (scheduled_date_input) {
+    scheduled_date = new Date(scheduled_date_input).toISOString();
+  }
 
   const data = {
     client_name: formData.get('client_name') as string,
@@ -24,7 +29,7 @@ if (Astro.request.method === 'POST') {
     client_email: formData.get('client_email') as string,
     address: formData.get('address') as string,
     installation_type: formData.get('installation_type') as string,
-    scheduled_date: scheduled_date ? new Date(scheduled_date).toISOString() : null,
+    scheduled_date,
     assigned_to: (formData.get('assigned_to') as string) || null,
     notes: (formData.get('notes') as string) || null,
     created_by: user.id
