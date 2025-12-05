@@ -26,12 +26,23 @@ if (Astro.request.method === 'POST') {
 
   if (scheduled_date && scheduled_time) {
     const dateTimeString = `${scheduled_date}T${scheduled_time}:00`;
-    const result = await updateInstallation(accessToken, id, {
+
+    const currentInstallation = await getMyInstallationById(accessToken, user.id, id);
+    const updateData: any = {
       scheduled_date: new Date(dateTimeString).toISOString()
-    });
+    };
+
+    if (currentInstallation?.status === 'pending') {
+      updateData.status = 'in_progress';
+    }
+
+    const result = await updateInstallation(accessToken, id, updateData);
 
     if (result.success) {
-      successMessage = 'Fecha y hora actualizadas correctamente';
+      successMessage =
+        currentInstallation?.status === 'pending'
+          ? 'Fecha programada y estado actualizado a "En Progreso"'
+          : 'Fecha y hora actualizadas correctamente';
     } else {
       errorMessage = result.error || 'Error al actualizar la fecha y hora';
     }
