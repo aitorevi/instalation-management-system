@@ -125,16 +125,30 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body || 'Nueva notificación',
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
+    icon: data.icon || '/icons/icon-192.png',
+    badge: data.badge || '/icons/icon-96.png',
     vibrate: [100, 50, 100],
     data: {
-      url: data.url || '/'
+      url: data.url || '/',
+      ...data.data
     },
-    actions: data.actions || []
+    actions: data.actions || [],
+    requireInteraction: false,
+    tag: 'installation-notification'
   };
 
-  event.waitUntil(self.registration.showNotification(data.title || 'IMS', options));
+  log('[SW] Notification options:', options);
+
+  const notificationPromise = self.registration
+    .showNotification(data.title || 'IMS', options)
+    .then(() => {
+      log('[SW] Notification shown successfully');
+    })
+    .catch((err) => {
+      error('[SW] Failed to show notification:', err);
+    });
+
+  event.waitUntil(notificationPromise);
 });
 
 self.addEventListener('notificationclick', (event) => {
