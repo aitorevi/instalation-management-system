@@ -20,8 +20,10 @@ export interface InstallationWithInstaller extends Installation {
   } | null;
 }
 
-export async function getInstallationStats(): Promise<InstallationStats> {
-  const { data, error } = await supabase
+export async function getInstallationStats(accessToken: string): Promise<InstallationStats> {
+  const client = createServerClient(accessToken);
+
+  const { data, error } = await client
     .from('installations')
     .select('status', { count: 'exact' })
     .is('archived_at', null);
@@ -59,9 +61,12 @@ export async function getInstallationStats(): Promise<InstallationStats> {
 }
 
 export async function getUpcomingInstallations(
+  accessToken: string,
   limit: number = 5
 ): Promise<InstallationWithInstaller[]> {
-  const { data, error } = await supabase
+  const client = createServerClient(accessToken);
+
+  const { data, error } = await client
     .from('installations')
     .select(
       `

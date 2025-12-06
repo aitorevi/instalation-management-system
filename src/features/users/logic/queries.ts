@@ -89,10 +89,14 @@ export async function getUserById(accessToken: string, id: string): Promise<User
   return data;
 }
 
-export async function getUsersCount(): Promise<{ admins: number; installers: number }> {
+export async function getUsersCount(
+  accessToken: string
+): Promise<{ admins: number; installers: number }> {
+  const client = createServerClient(accessToken);
+
   const [adminsResult, installersResult] = await Promise.all([
-    supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'admin'),
-    supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'installer')
+    client.from('users').select('id', { count: 'exact', head: true }).eq('role', 'admin'),
+    client.from('users').select('id', { count: 'exact', head: true }).eq('role', 'installer')
   ]);
 
   if (adminsResult.error) {

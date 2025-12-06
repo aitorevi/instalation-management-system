@@ -35,9 +35,12 @@ export async function getMyStats(accessToken: string, userId: string): Promise<I
       return { pending: 0, inProgress: 0, completed: 0, todayCount: 0 };
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split('T')[0];
+    const now = new Date();
+    const madridTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Madrid' }));
+    const year = madridTime.getFullYear();
+    const month = String(madridTime.getMonth() + 1).padStart(2, '0');
+    const day = String(madridTime.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
 
     const stats: InstallerStats = {
       pending: 0,
@@ -89,13 +92,20 @@ export async function getTodayInstallations(
   try {
     const client = createServerClient(accessToken);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStart = today.toISOString().split('T')[0];
+    const now = new Date();
+    const madridTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Madrid' }));
 
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStart = tomorrow.toISOString().split('T')[0];
+    const year = madridTime.getFullYear();
+    const month = String(madridTime.getMonth() + 1).padStart(2, '0');
+    const day = String(madridTime.getDate()).padStart(2, '0');
+    const todayStart = `${year}-${month}-${day}`;
+
+    const tomorrowDate = new Date(madridTime);
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrowYear = tomorrowDate.getFullYear();
+    const tomorrowMonth = String(tomorrowDate.getMonth() + 1).padStart(2, '0');
+    const tomorrowDay = String(tomorrowDate.getDate()).padStart(2, '0');
+    const tomorrowStart = `${tomorrowYear}-${tomorrowMonth}-${tomorrowDay}`;
 
     const { data, error } = await client
       .from('installations')
@@ -137,10 +147,14 @@ export async function getUpcomingInstallations(
   try {
     const client = createServerClient(accessToken);
 
-    const tomorrow = new Date();
-    tomorrow.setHours(0, 0, 0, 0);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const now = new Date();
+    const madridTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Madrid' }));
+    const tomorrowDate = new Date(madridTime);
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrowYear = tomorrowDate.getFullYear();
+    const tomorrowMonth = String(tomorrowDate.getMonth() + 1).padStart(2, '0');
+    const tomorrowDay = String(tomorrowDate.getDate()).padStart(2, '0');
+    const tomorrowStr = `${tomorrowYear}-${tomorrowMonth}-${tomorrowDay}`;
 
     const { data, error } = await client
       .from('installations')
